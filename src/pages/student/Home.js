@@ -1,5 +1,4 @@
-import React from "react";
-
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Button,
@@ -8,7 +7,6 @@ import {
   CardContent,
   Grid,
   Typography,
-  Switch,
   useTheme,
 } from "@mui/material";
 import dayjs from "dayjs";
@@ -20,6 +18,7 @@ import "@fontsource/cabin/400.css";
 import "@fontsource/cabin/600.css";
 
 import AppointmentCard from "../../components/AppointmentCard";
+import { useStudent } from "./StudentContext";
 
 const series = [
   {
@@ -38,6 +37,14 @@ const series = [
 
 export default function Home() {
   const theme = useTheme();
+  const { student } = useStudent();
+
+  const [selectedDate, setSelectedDate] = useState(dayjs());
+  const [now, setNow] = useState(dayjs().format("HH:mm:ss A"));
+
+  const handleDateChange = (newDate) => {
+    setSelectedDate(newDate);
+  };
 
   const options = {
     chart: {
@@ -81,40 +88,27 @@ export default function Home() {
     },
   };
 
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(dayjs().format("HH:mm:ss A"));
+    }, 1000);
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
+
   return (
     <Grid container spacing={2}>
-      <Grid item xs={12} md={9}>
+      <Grid item xs={12}>
         <Card>
           <CardContent>
-            <Typography variant="h6">Hi Nayanajith, Good Morning</Typography>
-            <Box display="flex" justifyContent="space-between">
-              <Typography>08:12:45 AM</Typography>
-              <Typography>21/12/2023</Typography>
-            </Box>
-          </CardContent>
-        </Card>
-      </Grid>
-      <Grid item xs={12} md={3}>
-        <Card
-          sx={{
-            height: "100%",
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
-          <CardContent
-            sx={{
-              width: "100%",
-              paddingBottom: "16px !important",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography fontWeight="600" fontSize="18px" color="green">
-              ONLINE
+            <Typography variant="h6">
+              Hi {student.firstName}, Good Morning
             </Typography>
-            <Switch defaultChecked />
+            <Box display="flex" justifyContent="space-between">
+              <Typography>{now}</Typography>
+              <Typography>{dayjs().format("DD/MM/YYYY")}</Typography>
+            </Box>
           </CardContent>
         </Card>
       </Grid>
@@ -206,7 +200,7 @@ export default function Home() {
             }}
           >
             <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DateCalendar defaultValue={dayjs(new Date())} />
+              <DateCalendar value={selectedDate} onChange={handleDateChange} />
             </LocalizationProvider>
           </CardContent>
         </Card>

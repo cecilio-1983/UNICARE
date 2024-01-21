@@ -2,8 +2,12 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
+  Alert,
+  Snackbar,
+  Backdrop,
   TextField,
   Button,
+  Box,
   Card,
   CardContent,
   Grid,
@@ -20,10 +24,39 @@ import {
 
 import "@fontsource/cabin/400.css";
 import "@fontsource/cabin/600.css";
+import Logo from "../../assets/images/Logo.png";
+import { post } from "../../network/Request";
 
-export default function Login() {
+export default function StudentLogin() {
   const theme = useTheme();
   const navigate = useNavigate();
+
+  // #region backdrop
+
+  const [backdropOpen, setBackdropOpen] = useState(false);
+
+  const startProgress = () => setBackdropOpen(true);
+
+  const endProgress = () => setBackdropOpen(false);
+
+  // #endregion
+
+  // #region snackbar
+
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarProps, setSnackbarProps] = useState({
+    severity: "success",
+    text: "",
+  });
+
+  const showAlert = (severity, text) => {
+    setSnackbarProps({ severity: severity, text: text });
+    setSnackbarOpen(true);
+  };
+
+  const hideAlert = () => setSnackbarOpen(false);
+
+  // #endregion
 
   const [openFP, setOpenFP] = useState(false);
   const [canLogin, setCanLogin] = useState(true);
@@ -38,22 +71,55 @@ export default function Login() {
       password: password,
     };
 
-    console.log(data);
+    startProgress();
 
-    setInterval(() => navigate("/medical-centre/home"), 5000);
+    post(
+      "students/login",
+      data,
+      (response) => {
+        endProgress();
+        localStorage.setItem("loggedInAs", "student");
+        localStorage.setItem("token", response.token);
+        showAlert(response.status, response.message);
+        navigate("/students/home");
+      },
+      (error) => {
+        endProgress();
+        setCanLogin(true);
+        showAlert(error.status, error.message);
+      }
+    );
   };
 
-  const openForgotPassword = () => {
-    setOpenFP(true);
-  };
+  const signup = () => navigate("/students/signup");
 
-  const onCloseForgotPassword = () => {
-    setOpenFP(false);
-  };
+  const openForgotPassword = () => setOpenFP(true);
+
+  const onCloseForgotPassword = () => setOpenFP(false);
 
   return (
     <React.Fragment>
       <CssBaseline />
+
+      <Snackbar open={snackbarOpen} autoHideDuration={6000} onClose={hideAlert}>
+        <Alert
+          onClose={hideAlert}
+          severity={snackbarProps.severity}
+          sx={{ width: "100%" }}
+        >
+          {snackbarProps.text}
+        </Alert>
+      </Snackbar>
+
+      <Backdrop
+        sx={{
+          color: (theme) => theme.palette.primary.main,
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+        }}
+        open={backdropOpen}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
 
       <Dialog open={openFP} onClose={onCloseForgotPassword}>
         <DialogTitle>Forgot Password</DialogTitle>
@@ -63,6 +129,7 @@ export default function Login() {
             then click OK. You will recieve OTP with email.
           </DialogContentText>
           <TextField
+            type="email"
             label="Email"
             size="small"
             fullWidth
@@ -86,9 +153,6 @@ export default function Login() {
           height: "100vh",
         }}
       >
-        <Grid item position="absolute">
-          <CircularProgress sx={{ display: canLogin ? "none" : "flex" }} />
-        </Grid>
         <Grid item>
           <Card sx={{ ml: 2, mr: 2 }}>
             <CardContent>
@@ -99,7 +163,7 @@ export default function Login() {
                   alignItems: "center",
                 }}
               >
-                <img src="logo192.png" alt="Logo" style={{ width: "50px" }} />
+                <img src={Logo} alt="Logo" style={{ width: "50px" }} />
                 <Typography
                   variant="h4"
                   fontFamily="Cabin"
@@ -123,16 +187,14 @@ export default function Login() {
                 </Typography>
               </div>
               <TextField
-                value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                label="Email or username"
+                label="Index number or email"
                 type="email"
                 size="small"
                 fullWidth
                 variant="outlined"
               />
               <TextField
-                value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 label="Password"
                 type="password"
@@ -157,6 +219,24 @@ export default function Login() {
               >
                 {canLogin ? "Sign in" : "Please wait..."}
               </Button>
+
+              <Box display="flex" justifyContent="center" columnGap={1}>
+                <Typography
+                  onClick={openForgotPassword}
+                  fontSize="12px"
+                  sx={{ mt: 2 }}
+                >
+                  Don't have an account?
+                </Typography>
+                <Typography
+                  onClick={signup}
+                  fontSize="12px"
+                  color={theme.link}
+                  sx={{ mt: 2, cursor: "pointer" }}
+                >
+                  Sign up
+                </Typography>
+              </Box>
             </CardContent>
           </Card>
         </Grid>

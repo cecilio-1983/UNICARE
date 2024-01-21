@@ -1,0 +1,28 @@
+.imessage {
+  display: flex;
+  flex-direction: column;
+}
+
+.imessage [class^="msg-from-"]:first-child {
+  margin-top: 10px;
+}
+
+.imessage [class^="msg-from-"]:nth-last-child(2) {
+  margin-bottom: 10px;
+}
+
+.msg-from-me + .msg-from-me {
+  margin-top: 0.2rem;
+}
+
+.msg-from-them + .msg-from-them {
+  margin-top: 0.2rem;
+}
+
+.msg-from-me + .msg-from-them {
+  margin-top: 0.5rem;
+}
+
+.msg-from-them + .msg-from-me {
+  margin-top: 0.5rem;
+}

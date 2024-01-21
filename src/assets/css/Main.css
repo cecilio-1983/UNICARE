@@ -15,4 +15,66 @@
     right: auto !important;
     bottom: auto !important;
   }
+
+  .emergency-student-list {
+    position: static !important;
+    height: 400px !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: auto !important;
+  }
+
+  .emergency-content {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    max-height: 500px;
+  }
+}
+
+.scheduler-wrapper * {
+  border-color: rgba(128, 128, 128, 0.3) !important;
+}
+
+.scheduler-wrapper * {
+  scrollbar-width: thin;
+}
+
+.scheduler-wrapper *::-webkit-scrollbar {
+  height: 5px;
+}
+
+.scheduler-wrapper *::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  transition: ease;
+}
+
+.scheduler-wrapper *:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(128, 128, 128, 0.5);
+}
+
+.scheduler-wrapper .MuiAvatar-root {
+  top: 5px !important;
+  left: 5px !important;
+}
+
+.scheduler-wrapper .css-12aktbw,
+.css-59qdl0,
+.css-1y04mfu,
+.css-tcdjrz {
+  border-bottom: none !important;
+}
+
+.mui-textfield-scrollbar textarea::-webkit-scrollbar {
+  width: 5px;
+}
+.mui-textfield-scrollbar textarea::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  transition: 0.3s ease;
+}
+.mui-textfield-scrollbar textarea:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(128, 128, 128, 0.5);
 }

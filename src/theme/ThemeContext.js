@@ -1,9 +1,26 @@
-import { createTheme } from "@mui/material";
+import React, { createContext, useContext, useState } from "react";
+import {
+  createTheme,
+  ThemeProvider as MuiThemeProvider,
+} from "@mui/material/styles";
 
-export default function getUnicareTheme({ mode }) {
-  const unicareTheme = createTheme({
+const ThemeContext = createContext();
+
+export const ThemeProvider = ({ children }) => {
+  const [darkMode, setDarkMode] = useState(
+    localStorage.getItem("darkMode") === "true"
+  );
+
+  const toggleDarkMode = () => {
+    setDarkMode((prevMode) => {
+      localStorage.setItem("darkMode", prevMode ? "false" : "true");
+      return !prevMode;
+    });
+  };
+
+  const theme = createTheme({
     palette: {
-      mode: mode,
+      mode: darkMode ? "dark" : "light",
       primary: {
         lighter: "#C8FAD6",
         light: "#5BE49B",
@@ -12,9 +29,11 @@ export default function getUnicareTheme({ mode }) {
         darker: "#004B50",
       },
       secondary: {
-        main: "#6fd546",
-        light: "#81f752",
-        dark: "#58a838",
+        lighter: "#B0E693",
+        light: "#86CA6E",
+        main: "#6FD546",
+        dark: "#5CA93E",
+        darker: "#4B8835",
       },
     },
     components: {
@@ -31,6 +50,9 @@ export default function getUnicareTheme({ mode }) {
           root: {
             fontSize: "14px",
             color: (theme) => theme.palette.text.secondary,
+          },
+          inputMultiline: {
+            overflow: "hidden",
           },
         },
       },
@@ -81,10 +103,36 @@ export default function getUnicareTheme({ mode }) {
           },
         },
       },
+      MuiList: {
+        styleOverrides: {
+          root: {
+            overflowY: "auto",
+            scrollbarWidth: "thin",
+            "&::-webkit-scrollbar": {
+              width: "5px",
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "transparent",
+              transition: "background-color 0.3s ease",
+            },
+            "&:hover::-webkit-scrollbar-thumb": {
+              backgroundColor: "rgba(128, 128, 128, 0.5)",
+            },
+          },
+        },
+      },
     },
     link: "#198AFF",
     selectedMenu: "rgba(15, 112, 41, 0.1)",
   });
 
-  return unicareTheme;
-}
+  return (
+    <ThemeContext.Provider value={{ darkMode, toggleDarkMode }}>
+      <MuiThemeProvider theme={theme}>{children}</MuiThemeProvider>
+    </ThemeContext.Provider>
+  );
+};
+
+export const useTheme = () => {
+  return useContext(ThemeContext);
+};

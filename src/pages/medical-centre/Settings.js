@@ -1,41 +1,143 @@
-import { useCookies } from "react-cookie";
-
 import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Button,
   Box,
+  Card,
+  CardHeader,
+  CardContent,
   Grid,
+  InputLabel,
   MenuItem,
   TextField,
   Typography,
+  FormHelperText,
   Switch,
+  List,
   Select,
 } from "@mui/material";
-
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { useEffect, useState } from "react";
+import { useTheme } from "../../theme/ThemeContext";
+import TimeSlot from "../../components/TimeSlot";
+import { TimePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { useCallback, useEffect, useState } from "react";
+import validate from "../../validation/Validator";
+import { timeToMinutes } from "../../common/Common";
+import { put, fetch, remove } from "../../network/Request";
+import { useDoctor } from "./DoctorContext";
+
+const validations = {
+  startTime: {
+    type: "time",
+    required: true,
+    min: "08:00 AM",
+    max: "05:00 PM",
+  },
+  endTime: {
+    type: "time",
+    required: true,
+    min: "08:00 AM",
+    max: "05:00 PM",
+  },
+};
 
 export default function Settings() {
-  const [darkMode, setDarkMode] = useState(false);
-  const [cookies, setCookie] = useCookies(["theme"]);
+  const { showAlert, noAuth } = useDoctor();
+  const { darkMode, toggleDarkMode } = useTheme();
+
+  const [slots, setSlots] = useState([]);
+  const [slot, setSlot] = useState({ startTime: "", endTime: "" });
+  const [errors, setErrors] = useState({ startTime: null, endTime: null });
+
+  const handleDataChanged = (e) => {
+    const { name, value } = e.target;
+
+    setSlot((prevSlot) => ({ ...prevSlot, [name]: value }));
+
+    const res = validate(validations[name], value);
+
+    if (res.valid) {
+      setErrors((prevErrors) => ({ ...prevErrors, [name]: null }));
+    } else {
+      setErrors((prevErrors) => ({ ...prevErrors, [name]: res.msg }));
+    }
+  };
+
+  const validateAll = () => {
+    var ok = true;
+
+    Object.entries(slot).forEach(([key, value]) => {
+      const res = validate(validations[key], value);
+
+      if (res.valid) {
+        setErrors((prevErrors) => ({ ...prevErrors, [key]: null }));
+      } else {
+        setErrors((prevErrors) => ({ ...prevErrors, [key]: [res.msg] }));
+        ok = false;
+      }
+    });
+
+    return ok;
+  };
+
+  const addTimeSlot = () => {
+    if (validateAll()) {
+      const body = {
+        startTime: timeToMinutes(slot.startTime),
+        endTime: timeToMinutes(slot.endTime),
+      };
+
+      put(
+        "timeslots/add",
+        body,
+        (response) => {
+          loadData();
+          showAlert(response.status, response.message);
+        },
+        (error) => {
+          if (error.status === "no-auth") noAuth();
+          else showAlert(error.status, error.message);
+        }
+      );
+    }
+  };
+
+  const onTimeSlotDelete = (_id) => {
+    remove(
+      "timeslots",
+      { _id: _id },
+      (response) => {
+        loadData();
+        showAlert(response.status, response.message);
+      },
+      (error) => {
+        showAlert(error.status, error.message);
+      }
+    );
+  };
+
+  const loadData = useCallback(() => {
+    fetch(
+      "timeslots",
+      {},
+      (response) => {
+        setSlots(response.slots);
+      },
+      (error) => {
+        showAlert(error.status, error.message);
+      }
+    );
+  }, [showAlert]);
 
   useEffect(() => {
-    if (cookies["theme"] === "dark") {
-      setDarkMode(true);
-    }
-  }, [cookies]);
-
-  const handleDarkModeChange = (event) => {
-    setDarkMode(event.target.checked);
-    setCookie("theme", event.target.checked ? "dark" : "light", {
-      maxAge: 8640000, // 100 days
-    });
-  };
+    loadData();
+  }, [loadData]);
 
   return (
     <Grid container>
-      <Grid item xs="12">
+      <Grid item xs={12}>
         <Accordion>
           <AccordionSummary expandIcon={<ExpandMoreIcon />}>
             <Typography>Theme</Typography>
@@ -48,7 +150,7 @@ export default function Settings() {
             }}
           >
             <Typography variant="caption">Dark theme</Typography>
-            <Switch checked={darkMode} onChange={handleDarkModeChange} />
+            <Switch checked={darkMode} onChange={toggleDarkMode} />
           </AccordionDetails>
         </Accordion>
         <Accordion>
@@ -87,7 +189,7 @@ export default function Settings() {
                 alignItems: "center",
               }}
             >
-              <Typography variant="caption">Maxmum patient warning</Typography>
+              <Typography variant="caption">Maximum patient warning</Typography>
               <Box display="flex" columnGap={1} alignItems="center">
                 <Typography variant="caption">More than</Typography>
                 <TextField
@@ -97,7 +199,8 @@ export default function Settings() {
                   variant="outlined"
                 />
                 <Typography variant="caption">patients in a</Typography>
-                <Select size="small">
+                <Select size="small" value="">
+                  <MenuItem value="">time period</MenuItem>
                   <MenuItem value={0}>day</MenuItem>
                   <MenuItem value={1}>week</MenuItem>
                   <MenuItem value={2}>month</MenuItem>
@@ -105,6 +208,120 @@ export default function Settings() {
                 <Switch />
               </Box>
             </Box>
+          </AccordionDetails>
+        </Accordion>
+        <Accordion>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography>Appointment time slots</Typography>
+          </AccordionSummary>
+          <AccordionDetails
+            sx={{ display: "flex", flexDirection: "column", rowGap: 1 }}
+          >
+            <Grid container spacing={2}>
+              <Grid item xs={12} sm={6} md={4}>
+                <Card variant="outlined" sx={{ boxShadow: "none" }}>
+                  <CardHeader title="Add new slot" />
+                  <CardContent>
+                    <LocalizationProvider dateAdapter={AdapterDayjs}>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12}>
+                          <InputLabel>Start Time</InputLabel>
+                          <TimePicker
+                            slotProps={{
+                              textField: {
+                                size: "small",
+                                placeholder: "Start Time",
+                                error: errors.startTime !== null,
+                              },
+                            }}
+                            sx={{ width: "100%" }}
+                            value={slot.startTime}
+                            onChange={(value) =>
+                              handleDataChanged({
+                                target: { name: "startTime", value: value },
+                              })
+                            }
+                          />
+                          <FormHelperText
+                            sx={{
+                              display:
+                                errors.startTime === null ? "none" : "block",
+                              color: "error.main",
+                              margin: "4px 14px 0px 14px !important",
+                            }}
+                          >
+                            {errors.startTime}
+                          </FormHelperText>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <InputLabel>End Time</InputLabel>
+                          <TimePicker
+                            slotProps={{
+                              textField: {
+                                size: "small",
+                                placeholder: "End Time",
+                                error: errors.endTime !== null,
+                              },
+                            }}
+                            sx={{ width: "100%" }}
+                            value={slot.endTime}
+                            onChange={(value) =>
+                              handleDataChanged({
+                                target: { name: "endTime", value: value },
+                              })
+                            }
+                          />
+                          <FormHelperText
+                            sx={{
+                              display:
+                                errors.endTime === null ? "none" : "block",
+                              color: "error.main",
+                              margin: "4px 14px 0px 14px !important",
+                            }}
+                          >
+                            {errors.endTime}
+                          </FormHelperText>
+                        </Grid>
+                        <Grid item xs={12}>
+                          <Button
+                            variant="contained"
+                            onClick={addTimeSlot}
+                            fullWidth
+                          >
+                            Add Slot
+                          </Button>
+                        </Grid>
+                      </Grid>
+                    </LocalizationProvider>
+                  </CardContent>
+                </Card>
+              </Grid>
+              <Grid item xs={12} sm={6} md={8}>
+                <List sx={{ padding: 0 }}>
+                  {slots.map((value, index) => {
+                    if (index === slots.length - 1) {
+                      return (
+                        <TimeSlot
+                          key={index}
+                          data={value}
+                          onClickDelete={onTimeSlotDelete}
+                        />
+                      );
+                    } else {
+                      return (
+                        <Box marginBottom="8px" key={index}>
+                          <TimeSlot
+                            key={index}
+                            data={value}
+                            onClickDelete={onTimeSlotDelete}
+                          />
+                        </Box>
+                      );
+                    }
+                  })}
+                </List>
+              </Grid>
+            </Grid>
           </AccordionDetails>
         </Accordion>
       </Grid>
