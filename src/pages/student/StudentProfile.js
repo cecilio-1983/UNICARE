@@ -42,14 +42,108 @@ import { useStudent } from "./StudentContext";
 import { uploadFile } from "../../network/Request";
 import { firstLetterUppercase } from "../../common/Common";
 import { dataUrlToBlob, randomText } from "../../common/Common";
-import validate, { validations } from "../../validation/Validator";
+import validate from "../../validation/Validator";
 import { fetch, put } from "../../network/Request";
+
+const validations = {
+  firstName: { type: "string", required: true, max: 30 },
+  lastName: { type: "string", required: true, max: 30 },
+  gender: { type: "string", required: true, enum: ["male", "female"] },
+  birthday: {
+    type: "date",
+    required: true,
+    min: "1980-01-01",
+    max: "today",
+  },
+  phone: {
+    type: "string",
+    required: true,
+    regex: /^0\d{9}$/,
+    regexError: "Phone number must start with 0 and must contain 10 digits",
+  },
+  email: {
+    type: "string",
+    required: true,
+    max: 50,
+    regex: /^\S+@\S+\.\S+$/,
+  },
+  address: {
+    type: "string",
+    required: true,
+    max: 200,
+  },
+  bio: {
+    type: "string",
+    required: true,
+    min: 100,
+    max: 500,
+  },
+  regNo: {
+    type: "string",
+    required: true,
+    max: 30,
+  },
+  indexNo: {
+    type: "string",
+    required: true,
+    max: 20,
+  },
+  faculty: {
+    type: "string",
+    required: true,
+  },
+  height: {
+    type: "float",
+    required: true,
+    min: 0.0,
+    max: 300.0,
+  },
+  weight: {
+    type: "float",
+    required: true,
+    min: 0.0,
+    max: 500.0,
+  },
+  bloodGroup: {
+    type: "string",
+    required: true,
+    enum: ["a+", "a-", "b+", "b-", "o+", "o-", "ab+", "ab-"],
+  },
+  diseases: {
+    type: "string",
+    max: 1000,
+  },
+};
+
+const passwordValidations = {
+  currentPassword: {
+    type: "string",
+    required: true,
+  },
+  newPassword: {
+    type: "string",
+    required: true,
+    min: 8,
+    max: 20,
+    regex: /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,20}$/,
+    regexError:
+      "The password must contain at least one symbol, one digit, one lowercase letter and one uppercase letter",
+  },
+  confirmPassword: {
+    type: "string",
+    required: true,
+    min: 8,
+    max: 20,
+    regex: /^(?=.*[0-9])(?=.*[!@#$%^&*])[a-zA-Z0-9!@#$%^&*]{8,20}$/,
+    regexError:
+      "The password must contain at least one symbol, one digit, one lowercase letter and one uppercase letter",
+  },
+};
 
 export default function StudentProfile() {
   const { student, setStudent, noAuth, showAlert, startProgress, endProgress } =
     useStudent();
   const [tabIndex, setTabIndex] = useState(0);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [faculties, setFaculties] = useState([]);
   const [localStudent, setLocalStudent] = useState(student);
   const [errors, setErrors] = useState({
@@ -71,15 +165,10 @@ export default function StudentProfile() {
     bloodGroup: null,
     diseases: null,
   });
-  const [disabledButtons, setDisabledButtons] = useState({
-    general: true,
-    reg: true,
-    health: true,
-  });
   const [password, setPassword] = useState({
-    currentPassword: null,
-    newPassword: null,
-    confirmPassword: null,
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
   });
   const [passwordErrors, setPasswordErrors] = useState({
     currentPassword: null,
@@ -87,68 +176,40 @@ export default function StudentProfile() {
     confirmPassword: null,
   });
 
-  const handleTabChange = (event, newValue) => {
+  const handleTabChange = (_, newValue) => {
     setTabIndex(newValue);
   };
 
   const handleDataChanged = (e) => {
-    const id = e.target.id;
-    const val = e.target.value;
+    const { name, value } = e.target;
 
-    setLocalStudent((prevStudent) => ({ ...prevStudent, [id]: val }));
+    setLocalStudent((prevStudent) => ({ ...prevStudent, [name]: value }));
 
-    if (validations.hasOwnProperty(id)) {
-      const res = validate(validations[id], val);
-
-      if (res.valid) {
-        setErrors((prevErrors) => ({ ...prevErrors, [id]: null }));
-      } else {
-        setErrors((prevErrors) => ({ ...prevErrors, [id]: res.msg }));
-      }
-    }
-
-    if (
-      [
-        "firstName",
-        "lastName",
-        "gender",
-        "birthday",
-        "phone",
-        "email",
-        "address",
-        "bio",
-      ].includes(id)
-    ) {
-      setDisabledButtons((prevBtns) => ({ ...prevBtns, general: false }));
-    } else if (["regNo", "indexNo", "faculty"].includes(id)) {
-      setDisabledButtons((prevBtns) => ({ ...prevBtns, reg: false }));
-    } else {
-      setDisabledButtons((prevBtns) => ({ ...prevBtns, health: false }));
+    if (validations.hasOwnProperty(name)) {
+      const res = validate(validations[name], value);
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        [name]: res.valid ? null : res.msg,
+      }));
     }
   };
 
-  const saveGeneral = () => {
+  const validateAll = (start, offSet) => {
     let valid = true;
-    [
-      "firstName",
-      "lastName",
-      "gender",
-      "birthday",
-      "phone",
-      "email",
-      "address",
-      "bio",
-    ].forEach((value) => {
-      const res = validate(validations[value], localStudent[value]);
-      if (res.valid) {
-        setErrors((prevErrors) => ({ ...prevErrors, [value]: null }));
-      } else {
-        setErrors((prevErrors) => ({ ...prevErrors, [value]: [res.msg] }));
-        valid = false;
-      }
-    });
+    for (let i = start; i < start + offSet; i++) {
+      const validation = Object.entries(validations)[i];
+      const res = validate(validation[1], localStudent[validation[0]]);
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        [validation[0]]: res.valid ? null : res.msg,
+      }));
+      if (!res.valid) valid = false;
+    }
+    return valid;
+  };
 
-    if (valid) {
+  const saveGeneral = () => {
+    if (validateAll(0, 8)) {
       startProgress();
 
       put(
@@ -169,18 +230,7 @@ export default function StudentProfile() {
   };
 
   const saveReg = () => {
-    let valid = true;
-    ["regNo", "indexNo", "faculty"].forEach((value) => {
-      const res = validate(validations[value], localStudent[value]);
-      if (res.valid) {
-        setErrors((prevErrors) => ({ ...prevErrors, [value]: null }));
-      } else {
-        setErrors((prevErrors) => ({ ...prevErrors, [value]: [res.msg] }));
-        valid = false;
-      }
-    });
-
-    if (valid) {
+    if (validateAll(8, 3)) {
       startProgress();
 
       put(
@@ -201,18 +251,7 @@ export default function StudentProfile() {
   };
 
   const saveHealth = () => {
-    let valid = true;
-    ["height", "weight", "bloodGroup", "diseases"].forEach((value) => {
-      const res = validate(validations[value], localStudent[value]);
-      if (res.valid) {
-        setErrors((prevErrors) => ({ ...prevErrors, [value]: null }));
-      } else {
-        setErrors((prevErrors) => ({ ...prevErrors, [value]: [res.msg] }));
-        valid = false;
-      }
-    });
-
-    if (valid) {
+    if (validateAll(11, 4)) {
       startProgress();
 
       put(
@@ -233,33 +272,28 @@ export default function StudentProfile() {
   };
 
   const handlePasswordChanged = (e) => {
-    const id = e.target.id;
-    const val = e.target.value;
+    const { name, value } = e.target;
 
-    setPassword((prevPassword) => ({ ...prevPassword, [id]: val }));
+    setPassword((prevPassword) => ({ ...prevPassword, [name]: value }));
 
-    const res = validate(validations.password, val);
-
-    if (res.valid) {
-      setPasswordErrors((prevErrors) => ({ ...prevErrors, [id]: null }));
-    } else {
-      setPasswordErrors((prevErrors) => ({ ...prevErrors, [id]: res.msg }));
-    }
+    const res = validate(passwordValidations[name], value);
+    setPasswordErrors((prevErrors) => ({
+      ...prevErrors,
+      [name]: res.valid ? null : res.msg,
+    }));
   };
 
   const changePassword = () => {
     let valid = true;
-    ["currentPassword", "newPassword", "confirmPassword"].forEach((value) => {
-      const res = validate(validations.password, password[value]);
-      if (res.valid) {
-        setPasswordErrors((prevErrors) => ({ ...prevErrors, [value]: null }));
-      } else {
-        setPasswordErrors((prevErrors) => ({
-          ...prevErrors,
-          [value]: res.msg,
-        }));
-        valid = false;
-      }
+
+    Object.entries(password).forEach(([key, value]) => {
+      const res = validate(passwordValidations[key], value);
+
+      setPasswordErrors((prevErrors) => ({
+        ...prevErrors,
+        [key]: res.valid ? null : res.msg,
+      }));
+      if (!res.valid) valid = false;
     });
 
     if (valid) {
@@ -268,28 +302,35 @@ export default function StudentProfile() {
           ...prevErrors,
           confirmPassword: "Confirm password and password must same",
         }));
-      } else {
-        startProgress();
-
-        put(
-          "students/change-password",
-          password,
-          (response) => {
-            endProgress();
-            showAlert(response.status, response.message);
-          },
-          (error) => {
-            endProgress();
-            if (error.status === "no-auth") noAuth();
-            else showAlert(error.status, error.message);
-          }
-        );
+        return;
       }
+
+      startProgress();
+
+      put(
+        "students/change-password",
+        password,
+        (response) => {
+          endProgress();
+          setPassword({
+            currentPassword: "",
+            newPassword: "",
+            confirmPassword: "",
+          });
+          showAlert(response.status, response.message);
+        },
+        (error) => {
+          endProgress();
+          if (error.status === "no-auth") noAuth();
+          else showAlert(error.status, error.message);
+        }
+      );
     }
   };
 
   // #region select and crop image
 
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [dp, setDp] = useState(null);
 
@@ -332,7 +373,6 @@ export default function StudentProfile() {
       "students/change-dp",
       { key: "image", value: file },
       {},
-      (uploadedSize, totalSize, percentage) => setUploadProgress(percentage),
       () => {
         setStudent({
           ...student,
@@ -345,7 +385,8 @@ export default function StudentProfile() {
         } else {
           showAlert(error.status, error.message);
         }
-      }
+      },
+      (uploadedSize, totalSize, percentage) => setUploadProgress(percentage)
     );
   };
 
@@ -513,11 +554,11 @@ export default function StudentProfile() {
                       <Grid item xs={12} md={4}>
                         <InputLabel>First Name *</InputLabel>
                         <TextField
-                          id="firstName"
-                          value={localStudent.firstName}
+                          name="firstName"
                           size="small"
                           placeholder="First Name"
                           fullWidth
+                          value={localStudent.firstName}
                           onChange={handleDataChanged}
                           helperText={errors.firstName}
                           error={errors.firstName !== null}
@@ -526,11 +567,11 @@ export default function StudentProfile() {
                       <Grid item xs={12} md={4}>
                         <InputLabel>Last Name *</InputLabel>
                         <TextField
-                          id="lastName"
-                          value={localStudent.lastName}
+                          name="lastName"
                           size="small"
                           placeholder="Last Name"
                           fullWidth
+                          value={localStudent.lastName}
                           onChange={handleDataChanged}
                           helperText={errors.lastName}
                           error={errors.lastName !== null}
@@ -538,16 +579,14 @@ export default function StudentProfile() {
                       </Grid>
                       <Grid item xs={12} md={4}>
                         <InputLabel>Gender *</InputLabel>
-                        <FormControl sx={{ width: "100%" }}>
+                        <FormControl fullWidth>
                           <Select
+                            name="gender"
                             variant="outlined"
                             size="small"
                             fullWidth
                             value={localStudent.gender}
-                            onChange={(e) => {
-                              e.target = { ...e.target, id: "gender" };
-                              handleDataChanged(e);
-                            }}
+                            onChange={handleDataChanged}
                             error={errors.gender !== null}
                           >
                             <MenuItem value="">
@@ -556,55 +595,39 @@ export default function StudentProfile() {
                             <MenuItem value="male">Male</MenuItem>
                             <MenuItem value="female">Female</MenuItem>
                           </Select>
-                          <FormHelperText
-                            sx={{
-                              display:
-                                errors.gender === null ? "none" : "block",
-                              color: "error.main",
-                            }}
-                          >
-                            {errors.gender}
-                          </FormHelperText>
+                          <FormHelperText error>{errors.gender}</FormHelperText>
                         </FormControl>
                       </Grid>
                       <Grid item xs={12} md={4}>
                         <InputLabel>Birthday *</InputLabel>
-                        <LocalizationProvider dateAdapter={AdapterDayjs}>
-                          <DatePicker
-                            format="DD/MM/YYYY"
-                            slotProps={{
-                              textField: {
-                                size: "small",
-                                placeholder: "Birthday",
-                                error: errors.birthday !== null,
-                              },
-                            }}
-                            sx={{
-                              width: "100%",
-                            }}
-                            value={dayjs(localStudent.birthday)}
-                            onChange={(value) => {
-                              handleDataChanged({
-                                target: { id: "birthday", value: value },
-                              });
-                            }}
-                          />
-                        </LocalizationProvider>
-                        <FormHelperText
-                          sx={{
-                            display:
-                              errors.birthday === null ? "none" : "block",
-                            color: "error.main",
-                            margin: "4px 14px 0px 14px !important",
-                          }}
-                        >
-                          {errors.birthday}
-                        </FormHelperText>
+                        <FormControl fullWidth>
+                          <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <DatePicker
+                              format="YYYY-MM-DD"
+                              slotProps={{
+                                textField: {
+                                  size: "small",
+                                  placeholder: "Birthday",
+                                  error: errors.birthday !== null,
+                                },
+                              }}
+                              value={dayjs(localStudent.birthday)}
+                              onChange={(value) => {
+                                handleDataChanged({
+                                  target: { name: "birthday", value: value },
+                                });
+                              }}
+                            />
+                          </LocalizationProvider>
+                          <FormHelperText error>
+                            {errors.birthday}
+                          </FormHelperText>
+                        </FormControl>
                       </Grid>
                       <Grid item xs={12} md={4}>
                         <InputLabel>Phone Number *</InputLabel>
                         <TextField
-                          id="phone"
+                          name="phone"
                           size="small"
                           placeholder="Phone Number"
                           fullWidth
@@ -617,7 +640,7 @@ export default function StudentProfile() {
                       <Grid item xs={12} md={4}>
                         <InputLabel>Email Address *</InputLabel>
                         <TextField
-                          id="email"
+                          name="email"
                           size="small"
                           placeholder="Email Address"
                           fullWidth
@@ -630,12 +653,12 @@ export default function StudentProfile() {
                       <Grid item xs={12}>
                         <InputLabel>Address *</InputLabel>
                         <TextField
-                          id="address"
+                          name="address"
                           size="small"
                           placeholder="Address"
                           multiline
-                          rows={3}
                           fullWidth
+                          rows={3}
                           value={localStudent.address}
                           onChange={handleDataChanged}
                           error={errors.address !== null}
@@ -645,12 +668,12 @@ export default function StudentProfile() {
                       <Grid item xs={12}>
                         <InputLabel>Bio *</InputLabel>
                         <TextField
-                          id="bio"
+                          name="bio"
                           size="small"
                           placeholder="Bio"
-                          rows={3}
                           fullWidth
                           multiline
+                          rows={3}
                           value={localStudent.bio}
                           onChange={handleDataChanged}
                           error={errors.bio !== null}
@@ -658,11 +681,7 @@ export default function StudentProfile() {
                         />
                       </Grid>
                       <Grid item xs={12} display="flex" justifyContent="right">
-                        <Button
-                          onClick={saveGeneral}
-                          variant="outlined"
-                          disabled={disabledButtons.general}
-                        >
+                        <Button onClick={saveGeneral} variant="outlined">
                           Save Changes
                         </Button>
                       </Grid>
@@ -682,7 +701,7 @@ export default function StudentProfile() {
                           <Grid item xs={12} md={4}>
                             <InputLabel>Registration No *</InputLabel>
                             <TextField
-                              id="regNo"
+                              name="regNo"
                               size="small"
                               placeholder="Registration No"
                               fullWidth
@@ -695,7 +714,7 @@ export default function StudentProfile() {
                           <Grid item xs={12} md={4}>
                             <InputLabel>Index No *</InputLabel>
                             <TextField
-                              id="indexNo"
+                              name="indexNo"
                               size="small"
                               placeholder="Index No"
                               fullWidth
@@ -707,39 +726,35 @@ export default function StudentProfile() {
                           </Grid>
                           <Grid item xs={12} md={4}>
                             <InputLabel>Faculty *</InputLabel>
-                            <Select
-                              size="small"
-                              placeholder="Faculty"
-                              fullWidth
-                              value={
-                                faculties.length === 0
-                                  ? ""
-                                  : localStudent.faculty
-                              }
-                              onChange={(e) => {
-                                e.target = { ...e.target, id: "faculty" };
-                                handleDataChanged(e);
-                              }}
-                              error={errors.faculty !== null}
-                            >
-                              <MenuItem value="">
-                                <em>None</em>
-                              </MenuItem>
-                              {faculties.map((faculty) => (
-                                <MenuItem key={faculty._id} value={faculty._id}>
-                                  {faculty.name}
+                            <FormControl fullWidth>
+                              <Select
+                                name="faculty"
+                                size="small"
+                                placeholder="Faculty"
+                                value={
+                                  faculties.length === 0
+                                    ? ""
+                                    : localStudent.faculty
+                                }
+                                onChange={handleDataChanged}
+                                error={errors.faculty !== null}
+                              >
+                                <MenuItem value="">
+                                  <em>None</em>
                                 </MenuItem>
-                              ))}
-                            </Select>
-                            <FormHelperText
-                              sx={{
-                                display:
-                                  errors.faculty === null ? "none" : "block",
-                                color: "error.main",
-                              }}
-                            >
-                              {errors.faculty}
-                            </FormHelperText>
+                                {faculties.map((faculty) => (
+                                  <MenuItem
+                                    key={faculty._id}
+                                    value={faculty._id}
+                                  >
+                                    {faculty.name}
+                                  </MenuItem>
+                                ))}
+                              </Select>
+                              <FormHelperText error>
+                                {errors.faculty}
+                              </FormHelperText>
+                            </FormControl>
                           </Grid>
                           <Grid
                             item
@@ -747,11 +762,7 @@ export default function StudentProfile() {
                             display="flex"
                             justifyContent="right"
                           >
-                            <Button
-                              onClick={saveReg}
-                              variant="outlined"
-                              disabled={disabledButtons.reg}
-                            >
+                            <Button onClick={saveReg} variant="outlined">
                               Save Changes
                             </Button>
                           </Grid>
@@ -768,101 +779,82 @@ export default function StudentProfile() {
                         <Grid container spacing={2}>
                           <Grid item xs={12} md={4}>
                             <InputLabel>Height *</InputLabel>
-                            <OutlinedInput
-                              id="height"
-                              size="small"
-                              placeholder="Height"
-                              endAdornment={
-                                <InputAdornment position="end">
-                                  cm
-                                </InputAdornment>
-                              }
-                              fullWidth
-                              value={localStudent.height}
-                              onChange={handleDataChanged}
-                              error={errors.height !== null}
-                            />
-                            <FormHelperText
-                              sx={{
-                                display:
-                                  errors.height === null ? "none" : "block",
-                                color: "error.main",
-                              }}
-                            >
-                              {errors.height}
-                            </FormHelperText>
+                            <FormControl fullWidth>
+                              <OutlinedInput
+                                name="height"
+                                size="small"
+                                placeholder="Height"
+                                endAdornment={
+                                  <InputAdornment position="end">
+                                    cm
+                                  </InputAdornment>
+                                }
+                                value={localStudent.height}
+                                onChange={handleDataChanged}
+                                error={errors.height !== null}
+                              />
+                              <FormHelperText error>
+                                {errors.height}
+                              </FormHelperText>
+                            </FormControl>
                           </Grid>
                           <Grid item xs={12} md={4}>
                             <InputLabel>Weight *</InputLabel>
-                            <OutlinedInput
-                              id="weight"
-                              size="small"
-                              placeholder="Weight"
-                              endAdornment={
-                                <InputAdornment position="end">
-                                  kg
-                                </InputAdornment>
-                              }
-                              fullWidth
-                              value={localStudent.weight}
-                              onChange={handleDataChanged}
-                              error={errors.weight !== null}
-                            />
-                            <FormHelperText
-                              sx={{
-                                display:
-                                  errors.weight === null ? "none" : "block",
-                                color: "error.main",
-                              }}
-                            >
-                              {errors.weight}
-                            </FormHelperText>
+                            <FormControl fullWidth>
+                              <OutlinedInput
+                                name="weight"
+                                size="small"
+                                placeholder="Weight"
+                                endAdornment={
+                                  <InputAdornment position="end">
+                                    kg
+                                  </InputAdornment>
+                                }
+                                value={localStudent.weight}
+                                onChange={handleDataChanged}
+                                error={errors.weight !== null}
+                              />
+                              <FormHelperText error>
+                                {errors.weight}
+                              </FormHelperText>
+                            </FormControl>
                           </Grid>
                           <Grid item xs={12} md={4}>
                             <InputLabel>Blood Group *</InputLabel>
-                            <Select
-                              size="small"
-                              placeholder="Blood Group"
-                              fullWidth
-                              value={localStudent.bloodGroup}
-                              onChange={(e) => {
-                                e.target = { ...e.target, id: "bloodGroup" };
-                                handleDataChanged(e);
-                              }}
-                              error={errors.bloodGroup !== null}
-                            >
-                              <MenuItem value="">
-                                <em>None</em>
-                              </MenuItem>
-                              <MenuItem value="a+">A+</MenuItem>
-                              <MenuItem value="a-">A-</MenuItem>
-                              <MenuItem value="b+">B+</MenuItem>
-                              <MenuItem value="b-">B-</MenuItem>
-                              <MenuItem value="o+">O+</MenuItem>
-                              <MenuItem value="o-">O-</MenuItem>
-                              <MenuItem value="ab+">AB+</MenuItem>
-                              <MenuItem value="ab-">AB-</MenuItem>
-                            </Select>
-                            <FormHelperText
-                              sx={{
-                                display:
-                                  errors.bloodGroup === null ? "none" : "block",
-                                color: "error.main",
-                              }}
-                            >
-                              {errors.bloodGroup}
-                            </FormHelperText>
+                            <FormControl fullWidth>
+                              <Select
+                                name="bloodGroup"
+                                size="small"
+                                placeholder="Blood Group"
+                                value={localStudent.bloodGroup}
+                                onChange={handleDataChanged}
+                                error={errors.bloodGroup !== null}
+                              >
+                                <MenuItem value="">
+                                  <em>None</em>
+                                </MenuItem>
+                                <MenuItem value="a+">A+</MenuItem>
+                                <MenuItem value="a-">A-</MenuItem>
+                                <MenuItem value="b+">B+</MenuItem>
+                                <MenuItem value="b-">B-</MenuItem>
+                                <MenuItem value="o+">O+</MenuItem>
+                                <MenuItem value="o-">O-</MenuItem>
+                                <MenuItem value="ab+">AB+</MenuItem>
+                                <MenuItem value="ab-">AB-</MenuItem>
+                              </Select>
+                              <FormHelperText error>
+                                {errors.bloodGroup}
+                              </FormHelperText>
+                            </FormControl>
                           </Grid>
                           <Grid item xs={12}>
-                            <InputLabel>
-                              Long Term Diseases (Optional)
-                            </InputLabel>
+                            <InputLabel>Long Term Diseases</InputLabel>
                             <TextField
-                              id="diseases"
+                              name="diseases"
                               size="small"
                               placeholder="Long Term Diseases"
-                              multiline
                               rows={4}
+                              multiline
                               fullWidth
                               value={localStudent.diseases}
                               onChange={handleDataChanged}
@@ -876,11 +868,7 @@ export default function StudentProfile() {
                             display="flex"
                             justifyContent="right"
                           >
-                            <Button
-                              onClick={saveHealth}
-                              variant="outlined"
-                              disabled={disabledButtons.health}
-                            >
+                            <Button onClick={saveHealth} variant="outlined">
                               Save Changes
                             </Button>
                           </Grid>
@@ -905,11 +893,12 @@ export default function StudentProfile() {
               <Grid item xs={12}>
                 <InputLabel>Current Password *</InputLabel>
                 <TextField
-                  id="currentPassword"
+                  name="currentPassword"
                   size="small"
                   placeholder="Current Password"
                   type="password"
                   fullWidth
+                  value={password.currentPassword}
                   onChange={handlePasswordChanged}
                   helperText={passwordErrors.currentPassword}
                   error={passwordErrors.currentPassword !== null}
@@ -918,11 +907,12 @@ export default function StudentProfile() {
               <Grid item xs={12} sm={6}>
                 <InputLabel>New Password *</InputLabel>
                 <TextField
-                  id="newPassword"
+                  name="newPassword"
                   size="small"
                   placeholder="New Password"
                   type="password"
                   fullWidth
+                  value={password.newPassword}
                   onChange={handlePasswordChanged}
                   helperText={passwordErrors.newPassword}
                   error={passwordErrors.newPassword !== null}
@@ -931,11 +921,12 @@ export default function StudentProfile() {
               <Grid item xs={12} sm={6}>
                 <InputLabel>Confirm Password *</InputLabel>
                 <TextField
-                  id="confirmPassword"
+                  name="confirmPassword"
                   size="small"
                   placeholder="Confirm Password"
                   type="password"
                   fullWidth
+                  value={password.confirmPassword}
                   onChange={handlePasswordChanged}
                   helperText={passwordErrors.confirmPassword}
                   error={passwordErrors.confirmPassword !== null}

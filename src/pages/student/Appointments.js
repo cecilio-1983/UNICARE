@@ -233,6 +233,7 @@ export default function Apointments() {
                 </FormControl>
               </Grid>
               <Grid item xs={12}>
+                <InputLabel>Description *</InputLabel>
                 <TextField
                   name="description"
                   value={appointment.description}
@@ -260,7 +261,7 @@ export default function Apointments() {
       <Grid item xs={12}>
         <Typography>Upcoming Appointments</Typography>
       </Grid>
-      <Grid item xs={12}>
+      <Grid item xs={12} display="flex">
         <Box
           sx={{
             display: "inline-block",
@@ -296,7 +297,7 @@ export default function Apointments() {
       <Grid item xs={12}>
         <Typography>Previous Appointments</Typography>
       </Grid>
-      <Grid item xs={12}>
+      <Grid item xs={12} display="flex">
         <Box
           sx={{
             display: "inline-block",

@@ -1,4 +1,4 @@
-@media only screen and (max-width: 700px) {
+@media only screen and (max-width: 900px) {
   .check-patient-student-list {
     position: static !important;
     height: 400px !important;
@@ -31,7 +31,7 @@
     left: auto !important;
     right: auto !important;
     bottom: auto !important;
-    max-height: 500px;
+    height: 500px;
   }
 }
 
@@ -56,7 +56,7 @@
   background-color: rgba(128, 128, 128, 0.5);
 }
 
-.scheduler-wrapper .MuiAvatar-root {
+/* .scheduler-wrapper .MuiAvatar-root {
   top: 5px !important;
   left: 5px !important;
 }
@@ -66,7 +66,7 @@
 .css-1y04mfu,
 .css-tcdjrz {
   border-bottom: none !important;
-}
+} */
 
 .mui-textfield-scrollbar textarea::-webkit-scrollbar {
   width: 5px;

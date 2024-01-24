@@ -179,9 +179,9 @@ export async function uploadFile(
   url = "",
   file = { key: null, value: null },
   data = {},
-  onProgress = (uploadedSize, totalSize, percentage) => {},
   onSuccess = (response) => {},
-  onError = (error) => {}
+  onError = (error) => {},
+  onProgress = (uploadedSize, totalSize, percentage) => {}
 ) {
   const formData = new FormData();
   formData.append(file.key, file.value);

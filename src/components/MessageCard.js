@@ -13,6 +13,8 @@ export default function MessageCard({ data, onClick = (student) => {} }) {
         })
       }
       sx={{
+        display: "block",
+        width: "100%",
         borderRadius: 0,
         boxShadow: "none",
         cursor: "pointer",

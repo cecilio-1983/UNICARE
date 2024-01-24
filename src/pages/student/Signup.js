@@ -201,49 +201,25 @@ export default function Signup() {
 
     if (validations.hasOwnProperty(name)) {
       const res = validate(validations[name], value);
-
-      if (res.valid) {
-        setErrors({ ...errors, [name]: null });
-      } else {
-        setErrors({ ...errors, [name]: res.msg });
-      }
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        [name]: res.valid ? null : res.msg,
+      }));
     }
   };
 
-  const validateAll = (step) => {
-    var ok = true;
-    var x = 0;
-
-    Object.entries(data).forEach(([key, value]) => {
-      if (step === 0 && x <= 9) {
-        const res = validate(validations[key], value);
-        if (res.valid) {
-          setErrors((prevErrors) => ({ ...prevErrors, [key]: null }));
-        } else {
-          setErrors((prevErrors) => ({ ...prevErrors, [key]: [res.msg] }));
-          ok = false;
-        }
-      } else if (step === 1 && x <= 12) {
-        const res = validate(validations[key], value);
-        if (res.valid) {
-          setErrors((prevErrors) => ({ ...prevErrors, [key]: null }));
-        } else {
-          setErrors((prevErrors) => ({ ...prevErrors, [key]: [res.msg] }));
-          ok = false;
-        }
-      } else if (step === 2 && x <= 16) {
-        const res = validate(validations[key], value);
-        if (res.valid) {
-          setErrors((prevErrors) => ({ ...prevErrors, [key]: null }));
-        } else {
-          setErrors((prevErrors) => ({ ...prevErrors, [key]: [res.msg] }));
-          ok = false;
-        }
-      }
-      x += 1;
-    });
-
-    return ok;
+  const validateAll = (start, offSet) => {
+    let valid = true;
+    for (let i = start; i < start + offSet; i++) {
+      const validation = Object.entries(validations)[i];
+      const res = validate(validation[1], data[validation[0]]);
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        [validation[0]]: res.valid ? null : res.msg,
+      }));
+      if (!res.valid) valid = false;
+    }
+    return valid;
   };
 
   const next = () => {
@@ -259,42 +235,48 @@ export default function Signup() {
       return;
     }
 
-    if (activeStep < steps.length - 1) {
-      if (validateAll(activeStep)) {
-        if (data.password === data.confirmPassword) {
-          setActiveStep(activeStep + 1);
-        } else {
-          setErrors((prevErrors) => ({
-            ...prevErrors,
-            confirmPassword: "Confirm password and password must same",
-          }));
+    if (data.password !== data.confirmPassword) {
+      setErrors((prevErrors) => ({
+        ...prevErrors,
+        confirmPassword: "Confirm password and password must same",
+      }));
+      return;
+    }
+
+    switch (activeStep) {
+      case 0:
+        if (validateAll(0, 10)) setActiveStep(activeStep + 1);
+        break;
+      case 1:
+        if (validateAll(0, 13)) setActiveStep(activeStep + 1);
+        break;
+      case 2:
+        if (validateAll(0, 17)) {
+          startProgress();
+          uploadFile(
+            "students/signup",
+            { key: "image", value: file },
+            data,
+            (response) => {
+              endProgress();
+              showAlert(response.status, response.message);
+              openDialog(
+                "Signup Success",
+                response.message,
+                "Login",
+                () => navigate("/students/login"),
+                "Cancel"
+              );
+            },
+            (error) => {
+              endProgress();
+              showAlert(error.status, error.message);
+            }
+          );
         }
-      }
-    } else {
-      if (validateAll(activeStep)) {
-        startProgress();
-        uploadFile(
-          "students/signup",
-          { key: "image", value: file },
-          data,
-          (uploadedSize, totalSize, percentage) => {},
-          (response) => {
-            endProgress();
-            showAlert(response.status, response.message);
-            openDialog(
-              "Signup Success",
-              response.message,
-              "Login",
-              () => navigate("/students/login"),
-              "Cancel"
-            );
-          },
-          (error) => {
-            endProgress();
-            showAlert(error.status, error.message);
-          }
-        );
-      }
+        break;
+      default:
+        break;
     }
   };
 
@@ -445,27 +427,21 @@ export default function Signup() {
             display={activeStep === 0 ? "flex" : "none"}
           >
             <Grid item xs={12} sm={12} md={12}>
-              <Box position="relative" width="100px" mt={2}>
-                <Avatar
-                  src={croppedDp}
-                  sx={{ width: "100px", height: "100px" }}
-                />
-                <IconButton
-                  sx={{ position: "absolute", bottom: "-5px", right: "-5px" }}
-                  onClick={browseDp}
-                >
-                  <CameraAltIcon />
-                </IconButton>
-              </Box>
-              <FormHelperText
-                sx={{
-                  display: dpError === null ? "none" : "block",
-                  color: "error.main",
-                  margin: "4px 14px 0 14px",
-                }}
-              >
-                {dpError}
-              </FormHelperText>
+              <FormControl>
+                <Box position="relative" width="100px" mt={2}>
+                  <Avatar
+                    src={croppedDp}
+                    sx={{ width: "100px", height: "100px" }}
+                  />
+                  <IconButton
+                    sx={{ position: "absolute", bottom: "-5px", right: "-5px" }}
+                    onClick={browseDp}
+                  >
+                    <CameraAltIcon />
+                  </IconButton>
+                </Box>
+                <FormHelperText error>{dpError}</FormHelperText>
+              </FormControl>
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
               <InputLabel>First Name *</InputLabel>
@@ -509,48 +485,32 @@ export default function Signup() {
                   <MenuItem value="male">Male</MenuItem>
                   <MenuItem value="female">Female</MenuItem>
                 </Select>
-                <FormHelperText
-                  sx={{
-                    display: errors.gender === null ? "none" : "block",
-                    color: "error.main",
-                  }}
-                >
-                  {errors.gender}
-                </FormHelperText>
+                <FormHelperText error>{errors.gender}</FormHelperText>
               </FormControl>
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
               <InputLabel>Birthday *</InputLabel>
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  slotProps={{
-                    textField: {
-                      size: "small",
-                      placeholder: "Birthday",
-                      error: errors.birthday !== null,
-                    },
-                  }}
-                  sx={{
-                    width: "100%",
-                  }}
-                  format="YYYY-MM-DD"
-                  value={data.birthday}
-                  onChange={(value) =>
-                    handleDataChanged({
-                      target: { name: "birthday", value: value },
-                    })
-                  }
-                />
-              </LocalizationProvider>
-              <FormHelperText
-                sx={{
-                  display: errors.birthday === null ? "none" : "block",
-                  color: "error.main",
-                  margin: "4px 14px 0px 14px !important",
-                }}
-              >
-                {errors.birthday}
-              </FormHelperText>
+              <FormControl fullWidth>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <DatePicker
+                    slotProps={{
+                      textField: {
+                        size: "small",
+                        placeholder: "Birthday",
+                        error: errors.birthday !== null,
+                      },
+                    }}
+                    format="YYYY-MM-DD"
+                    value={data.birthday}
+                    onChange={(value) =>
+                      handleDataChanged({
+                        target: { name: "birthday", value: value },
+                      })
+                    }
+                  />
+                </LocalizationProvider>
+                <FormHelperText error>{errors.birthday}</FormHelperText>
+              </FormControl>
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
               <InputLabel>Phone Number *</InputLabel>
@@ -664,32 +624,26 @@ export default function Signup() {
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
               <InputLabel>Faculty *</InputLabel>
-              <Select
-                name="faculty"
-                size="small"
-                placeholder="Faculty"
-                fullWidth
-                value={data.faculty}
-                onChange={handleDataChanged}
-                error={errors.faculty !== null}
-              >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
-                {faculties.map((faculty) => (
-                  <MenuItem key={faculty._id} value={faculty._id}>
-                    {faculty.name}
+              <FormControl fullWidth>
+                <Select
+                  name="faculty"
+                  size="small"
+                  placeholder="Faculty"
+                  value={data.faculty}
+                  onChange={handleDataChanged}
+                  error={errors.faculty !== null}
+                >
+                  <MenuItem value="">
+                    <em>None</em>
                   </MenuItem>
-                ))}
-              </Select>
-              <FormHelperText
-                sx={{
-                  display: errors.faculty === null ? "none" : "block",
-                  color: "error.main",
-                }}
-              >
-                {errors.faculty}
-              </FormHelperText>
+                  {faculties.map((faculty) => (
+                    <MenuItem key={faculty._id} value={faculty._id}>
+                      {faculty.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <FormHelperText error>{errors.faculty}</FormHelperText>
+              </FormControl>
             </Grid>
           </Grid>
 
@@ -701,82 +655,64 @@ export default function Signup() {
           >
             <Grid item xs={12} sm={6} md={4}>
               <InputLabel>Height *</InputLabel>
-              <OutlinedInput
-                name="height"
-                size="small"
-                placeholder="Height"
-                endAdornment={
-                  <InputAdornment position="end">cm</InputAdornment>
-                }
-                fullWidth
-                onChange={handleDataChanged}
-                error={errors.height !== null}
-              />
-              <FormHelperText
-                sx={{
-                  display: errors.height === null ? "none" : "block",
-                  color: "error.main",
-                }}
-              >
-                {errors.height}
-              </FormHelperText>
+              <FormControl fullWidth>
+                <OutlinedInput
+                  name="height"
+                  size="small"
+                  placeholder="Height"
+                  endAdornment={
+                    <InputAdornment position="end">cm</InputAdornment>
+                  }
+                  onChange={handleDataChanged}
+                  error={errors.height !== null}
+                />
+                <FormHelperText error>{errors.height}</FormHelperText>
+              </FormControl>
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
               <InputLabel>Weight *</InputLabel>
-              <OutlinedInput
-                name="weight"
-                size="small"
-                placeholder="Weight"
-                endAdornment={
-                  <InputAdornment position="end">kg</InputAdornment>
-                }
-                fullWidth
-                onChange={handleDataChanged}
-                error={errors.weight !== null}
-              />
-              <FormHelperText
-                sx={{
-                  display: errors.weight === null ? "none" : "block",
-                  color: "error.main",
-                }}
-              >
-                {errors.weight}
-              </FormHelperText>
+              <FormControl fullWidth>
+                <OutlinedInput
+                  name="weight"
+                  size="small"
+                  placeholder="Weight"
+                  endAdornment={
+                    <InputAdornment position="end">kg</InputAdornment>
+                  }
+                  onChange={handleDataChanged}
+                  error={errors.weight !== null}
+                />
+                <FormHelperText error>{errors.weight}</FormHelperText>
+              </FormControl>
             </Grid>
             <Grid item xs={12} sm={6} md={4}>
               <InputLabel>Blood Group *</InputLabel>
-              <Select
-                name="bloodGroup"
-                size="small"
-                placeholder="Blood Group"
-                fullWidth
-                value={data.bloodGroup}
-                onChange={handleDataChanged}
-                error={errors.bloodGroup !== null}
-              >
-                <MenuItem value="">
-                  <em>None</em>
-                </MenuItem>
-                <MenuItem value="a+">A+</MenuItem>
-                <MenuItem value="a-">A-</MenuItem>
-                <MenuItem value="b+">B+</MenuItem>
-                <MenuItem value="b-">B-</MenuItem>
-                <MenuItem value="o+">O+</MenuItem>
-                <MenuItem value="o-">O-</MenuItem>
-                <MenuItem value="ab+">AB+</MenuItem>
-                <MenuItem value="ab-">AB-</MenuItem>
-              </Select>
-              <FormHelperText
-                sx={{
-                  display: errors.bloodGroup === null ? "none" : "block",
-                  color: "error.main",
-                }}
-              >
-                {errors.bloodGroup}
-              </FormHelperText>
+              <FormControl fullWidth>
+                <Select
+                  name="bloodGroup"
+                  size="small"
+                  placeholder="Blood Group"
+                  value={data.bloodGroup}
+                  onChange={handleDataChanged}
+                  error={errors.bloodGroup !== null}
+                >
+                  <MenuItem value="">
+                    <em>None</em>
+                  </MenuItem>
+                  <MenuItem value="a+">A+</MenuItem>
+                  <MenuItem value="a-">A-</MenuItem>
+                  <MenuItem value="b+">B+</MenuItem>
+                  <MenuItem value="b-">B-</MenuItem>
+                  <MenuItem value="o+">O+</MenuItem>
+                  <MenuItem value="o-">O-</MenuItem>
+                  <MenuItem value="ab+">AB+</MenuItem>
+                  <MenuItem value="ab-">AB-</MenuItem>
+                </Select>
+                <FormHelperText error>{errors.bloodGroup}</FormHelperText>
+              </FormControl>
             </Grid>
             <Grid item xs={12} sm={12} md={12}>
-              <InputLabel>Long Term Diseases (Optional)</InputLabel>
+              <InputLabel>Long Term Diseases</InputLabel>
               <TextField
                 id="diseases"
                 size="small"

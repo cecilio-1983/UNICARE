@@ -35,7 +35,6 @@ import {
   Popover,
   Button,
   Snackbar,
-  colors,
   styled,
   useTheme,
 } from "@mui/material";
@@ -63,6 +62,8 @@ import NotificationCard from "../../components/NotificationCard";
 import Settings from "./Settings";
 import Emergency from "./Emergency";
 import Analysis from "./Analysis";
+
+import Logo from "../../assets/images/Logo.png";
 
 import { DoctorProvider } from "./DoctorContext";
 import { fetch } from "../../network/Request";
@@ -174,6 +175,11 @@ export default function MNavigationDrawer() {
     specialize: "",
   });
 
+  const openCheckPatient = (appointmentId) => {
+    setSelectedMenu(2);
+    setContent(<CheckPatient appointmentId={appointmentId} />);
+  };
+
   // #region snackbar
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -256,7 +262,7 @@ export default function MNavigationDrawer() {
         setContent(<Home />);
         break;
       case 1:
-        setContent(<Appointments />);
+        setContent(<Appointments openCheckPatient={openCheckPatient} />);
         break;
       case 2:
         setContent(<CheckPatient />);
@@ -465,10 +471,7 @@ export default function MNavigationDrawer() {
                 </Typography>
               </Popover>
 
-              <Avatar
-                sx={{ bgcolor: colors.amber[300], ml: 1 }}
-                src="../../profile2.png"
-              ></Avatar>
+              <Avatar sx={{ ml: 1 }} src={doctor.image} />
               <IconButton
                 onClick={(event) => handlePopoverOpen(1, event)}
                 sx={{
@@ -537,7 +540,7 @@ export default function MNavigationDrawer() {
           <DrawerHeader>
             <Box sx={{ display: "flex" }}>
               <img
-                src="../../logo192.png"
+                src={Logo}
                 alt="Logo"
                 style={{ width: "40px", height: "40px", marginRight: "10px" }}
               />

@@ -61,6 +61,8 @@ import StudentProfile from "./StudentProfile";
 import Appointments from "./Appointments";
 import Settings from "./Settings";
 
+import Logo from "../../assets/images/Logo.png";
+
 const drawerWidth = 240;
 const menu = [
   "Home",
@@ -459,10 +461,7 @@ export default function SNavigationDrawer() {
                 </Typography>
               </Popover>
 
-              <Avatar
-                sx={{ bgcolor: "secondary.dark", ml: 1 }}
-                src={student.image}
-              />
+              <Avatar sx={{ ml: 1 }} src={student.image} />
               <IconButton
                 onClick={(event) => handlePopoverOpen(1, event)}
                 sx={{
@@ -531,7 +530,7 @@ export default function SNavigationDrawer() {
           <DrawerHeader>
             <Box sx={{ display: "flex" }}>
               <img
-                src="../../logo192.png"
+                src={Logo}
                 alt="Logo"
                 style={{ width: "40px", height: "40px", marginRight: "10px" }}
               />

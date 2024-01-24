@@ -42,6 +42,7 @@ export default function HealthDetailCard({ icon, title, value }) {
             overflow: "hidden",
             WebkitLineClamp: 1,
             textOverflow: "ellipsis",
+            textTransform: "capitalize",
           }}
         >
           {value}

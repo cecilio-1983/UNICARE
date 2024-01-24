@@ -13,6 +13,7 @@ import "../../assets/css/MessageBubble.css";
 
 import SendIcon from "@mui/icons-material/Send";
 import MessageBubble from "../../components/MessageBubble";
+import NoMessages from "../../assets/images/NoMessages.svg";
 import { useStudent } from "./StudentContext";
 import { post, fetch } from "../../network/Request";
 import { dateDiff } from "../../common/Common";
@@ -90,7 +91,7 @@ export default function Emergency() {
     const handleMessage = (event) => {
       console.log("Received message from service worker:", event.data);
       const data = event.data.data;
-      if (data.task === "emergency") {
+      if (data.task === "emergency" && data.fr === "medical-centre") {
         setMessages((prevMsgs) => [
           ...prevMsgs,
           { text: data.text, from: data.fr, to: data.to, time: data.createdAt },
@@ -139,6 +140,11 @@ export default function Emergency() {
           height="100%"
           padding="0 16px"
           sx={{
+            ...(messages.length === 0 && {
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }),
             overflowY: "auto",
             overflowX: "hidden",
             scrollbarWidth: "thin",
@@ -188,6 +194,11 @@ export default function Emergency() {
               );
             }
           })}
+          {messages.length === 0 ? (
+            <img src={NoMessages} width="30%" alt="No Messages" />
+          ) : (
+            <></>
+          )}
           <Box
             sx={{ float: "left", clear: "both" }}
             ref={(el) => {

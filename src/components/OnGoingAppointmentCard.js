@@ -5,32 +5,47 @@ import {
   Box,
   Avatar,
   Button,
+  Tooltip,
 } from "@mui/material";
 import NoteAltIcon from "@mui/icons-material/NoteAlt";
+import VerifiedIcon from "@mui/icons-material/Verified";
 import dayjs from "dayjs";
 import isToday from "dayjs/plugin/isToday";
+
 dayjs.extend(isToday);
 
-export default function AppointmentCard({ data, shadow = true, sx }) {
+export default function OnGoingAppointmentCard({
+  data,
+  checkNow = (appointment) => {},
+}) {
   const isToday = dayjs(data.startTime).isToday();
 
   return (
     <Card
-      variant={shadow ? "elevation" : "outlined"}
-      style={{
-        ...(!shadow && {
-          boxShadow: "none",
-        }),
+      variant="outlined"
+      sx={{
+        display: "inline-block",
+        boxShadow: "none",
+        width: "350px",
+        minWidth: "350px",
+        maxWidth: "350px",
       }}
-      sx={{ ...sx }}
     >
       <CardContent>
-        <Typography variant="subtitle2">
-          {isToday
-            ? "Today "
-            : dayjs(data.endTime).format("YYYY-MM-DD hh:mm A - ")}
-          {dayjs(data.endTime).format("hh:mm A")}
-        </Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Typography variant="subtitle2">
+            {isToday && "Today "}
+            {dayjs(data.startTime).format(
+              isToday ? "hh:mm A - " : "YYYY-MM-DD hh:mm A - "
+            )}
+            {dayjs(data.endTime).format("hh:mm A")}
+          </Typography>
+          {data.checked && (
+            <Tooltip title="Checked Appointment">
+              <VerifiedIcon fontSize="small" sx={{ color: "primary.main" }} />
+            </Tooltip>
+          )}
+        </Box>
         <Box
           display="flex"
           justifyContent="space-between"
@@ -81,16 +96,18 @@ export default function AppointmentCard({ data, shadow = true, sx }) {
           {data.description}
         </Typography>
 
-        <Box display="flex" justifyContent="right" mt={1}>
-          <Button
-            variant="outlined"
-            size="small"
-            startIcon={<NoteAltIcon />}
-            onClick={() => {}}
-          >
-            Check Patient
-          </Button>
-        </Box>
+        {!data.checked && (
+          <Box display="flex" justifyContent="right" mt={1}>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<NoteAltIcon />}
+              onClick={() => checkNow(data)}
+            >
+              Check Now
+            </Button>
+          </Box>
+        )}
       </CardContent>
     </Card>
   );

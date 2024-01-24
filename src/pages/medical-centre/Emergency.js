@@ -24,6 +24,8 @@ import { fetch, post } from "../../network/Request";
 import { dateDiff } from "../../common/Common";
 import update from "immutability-helper";
 
+import NoMessages from "../../assets/images/NoMessages.svg";
+
 export default function Emergency() {
   const { doctor, showAlert, noAuth } = useDoctor();
   var messageEnd = null;
@@ -152,6 +154,8 @@ export default function Emergency() {
       console.log("Received message from service worker:", event.data);
       const data = event.data.data;
 
+      if (data.fr !== "student") return;
+
       if (data.task === "emergency" && selectedStudent._id === data._id) {
         // when do like this doctor msg seen not update
         // setMessages((prevMsgs) => [
@@ -188,8 +192,6 @@ export default function Emergency() {
     };
   }, [selectedStudent._id, msgOverviews, loadMessages]);
 
-  console.log(doctor);
-
   return (
     <Box display="flex" flexDirection="column" rowGap={2}>
       <Card
@@ -197,7 +199,6 @@ export default function Emergency() {
         variant="outlined"
         sx={{
           display: "flex",
-          flexDirection: "column",
           boxShadow: "none",
           position: "absolute",
           top: "88px",
@@ -206,7 +207,7 @@ export default function Emergency() {
           width: "300px",
         }}
       >
-        <Box display="flex" flexDirection="column">
+        <Box display="flex" flexDirection="column" width="100%">
           <TextField
             placeholder="Search student..."
             variant="outlined"
@@ -223,8 +224,7 @@ export default function Emergency() {
           />
           <Box
             sx={{
-              display: "flex",
-              flexDirection: "column",
+              display: "block",
               overflowY: "auto",
               scrollbarWidth: "thin",
               "&::-webkit-scrollbar": {
@@ -292,6 +292,11 @@ export default function Emergency() {
           height="100%"
           padding="0 16px"
           sx={{
+            ...(messages.length === 0 && {
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+            }),
             overflowY: "auto",
             overflowX: "hidden",
             scrollbarWidth: "thin",
@@ -338,6 +343,9 @@ export default function Emergency() {
               );
             }
           })}
+          {messages.length === 0 && (
+            <img src={NoMessages} width="30%" alt="No Messages" />
+          )}
           <Box
             sx={{ float: "left", clear: "both" }}
             ref={(el) => {

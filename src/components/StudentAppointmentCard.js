@@ -2,11 +2,12 @@ import { Card, CardHeader, CardContent, Typography, Box } from "@mui/material";
 import dayjs from "dayjs";
 import isToday from "dayjs/plugin/isToday";
 import { timeRemaining } from "../common/Common";
+import Checked from "../assets/images/Checked.svg";
 
 dayjs.extend(isToday);
 
 export default function StudentAppointmentCard({ data, shadow, mr, upcoming }) {
-  const today = dayjs(data.date).isToday();
+  const today = dayjs(data.startTime).isToday();
 
   return (
     <Card
@@ -23,7 +24,15 @@ export default function StudentAppointmentCard({ data, shadow, mr, upcoming }) {
         }),
       }}
     >
-      <CardHeader title="Appointment" />
+      <Box display="flex" justifyContent="space-between" pr={2}>
+        <CardHeader title="Appointment" />
+        <img
+          src={Checked}
+          alt="Checked"
+          width="20px"
+          style={{ display: !upcoming && data.checked ? "block" : "none" }}
+        />
+      </Box>
       <CardContent>
         <Typography variant="subtitle2">
           {`${
@@ -53,7 +62,13 @@ export default function StudentAppointmentCard({ data, shadow, mr, upcoming }) {
         </Typography>
         <Box display="flex" justifyContent="end" mt={2}>
           <Typography fontSize="10px" color="text.disabled">
-            Created at {dayjs(data.createdAt).format("YYYY-MM-DD hh:mm a")}
+            {!upcoming && data.checked
+              ? `Checked at ${dayjs(data.checkedAt).format(
+                  "YYYY-MM-DD hh:mm a"
+                )}`
+              : `Created at ${dayjs(data.createdAt).format(
+                  "YYYY-MM-DD hh:mm a"
+                )}`}
           </Typography>
         </Box>
       </CardContent>
