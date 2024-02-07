@@ -14,7 +14,7 @@ import isToday from "dayjs/plugin/isToday";
 
 dayjs.extend(isToday);
 
-export default function OnGoingAppointmentCard({
+export default function CheckAppointmentCard({
   data,
   checkNow = (appointment) => {},
 }) {
@@ -94,6 +94,25 @@ export default function OnGoingAppointmentCard({
           }}
         >
           {data.description}
+        </Typography>
+
+        <Typography
+          fontSize="10px"
+          color="text.disabled"
+          mt={1}
+          sx={{
+            display: "-webkit-box",
+            WebkitBoxOrient: "vertical",
+            overflow: "hidden",
+            WebkitLineClamp: 2,
+            textOverflow: "ellipsis",
+          }}
+        >
+          {data.checked
+            ? `Checked at ${dayjs(data.checkedAt).format("YYYY-MM-DD hh:mm A")}`
+            : `Created at ${dayjs(data.createdAt).format(
+                "YYYY-MM-DD hh:mm A"
+              )}`}
         </Typography>
 
         {!data.checked && (

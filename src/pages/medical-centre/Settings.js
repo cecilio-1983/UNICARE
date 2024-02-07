@@ -182,32 +182,6 @@ export default function Settings() {
               <Typography variant="caption">Emergency notification</Typography>
               <Switch />
             </Box>
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Typography variant="caption">Maximum patient warning</Typography>
-              <Box display="flex" columnGap={1} alignItems="center">
-                <Typography variant="caption">More than</Typography>
-                <TextField
-                  placeholder="patients"
-                  type="number"
-                  size="small"
-                  variant="outlined"
-                />
-                <Typography variant="caption">patients in a</Typography>
-                <Select size="small" value="">
-                  <MenuItem value="">time period</MenuItem>
-                  <MenuItem value={0}>day</MenuItem>
-                  <MenuItem value={1}>week</MenuItem>
-                  <MenuItem value={2}>month</MenuItem>
-                </Select>
-                <Switch />
-              </Box>
-            </Box>
           </AccordionDetails>
         </Accordion>
         <Accordion>

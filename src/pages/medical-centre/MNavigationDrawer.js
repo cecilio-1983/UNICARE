@@ -175,11 +175,6 @@ export default function MNavigationDrawer() {
     specialize: "",
   });
 
-  const openCheckPatient = (appointmentId) => {
-    setSelectedMenu(2);
-    setContent(<CheckPatient appointmentId={appointmentId} />);
-  };
-
   // #region snackbar
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -262,7 +257,7 @@ export default function MNavigationDrawer() {
         setContent(<Home />);
         break;
       case 1:
-        setContent(<Appointments openCheckPatient={openCheckPatient} />);
+        setContent(<Appointments />);
         break;
       case 2:
         setContent(<CheckPatient />);
@@ -354,6 +349,11 @@ export default function MNavigationDrawer() {
       }
     );
   }, [noAuth, showAlert]);
+
+  const openOtherTab = (index, content) => {
+    setSelectedMenu(index);
+    setContent(content);
+  };
 
   return (
     <Fragment>
@@ -682,6 +682,7 @@ export default function MNavigationDrawer() {
               noAuth,
               startProgress,
               endProgress,
+              openOtherTab,
             }}
           >
             {content}

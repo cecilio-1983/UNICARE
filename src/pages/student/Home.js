@@ -112,62 +112,6 @@ export default function Home() {
           </CardContent>
         </Card>
       </Grid>
-
-      <Grid item xs={12}>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography>Upcomming Appointments</Typography>
-          <Button variant="outlined">View all</Button>
-        </Box>
-      </Grid>
-
-      <Grid item xs={12} sm={6} md={3}>
-        <AppointmentCard
-          id="0"
-          time="12:05"
-          image="../../profile1.png"
-          name="Ahinsa Lakshani"
-          faculty="Faculty of Science"
-          note="Magna sit ullamco ipsum eu quis labore non sint. Labore culpa tempor
-          excepteur ut sunt aliqua eu cillum."
-        />
-      </Grid>
-      <Grid item xs={12} sm={6} md={3}>
-        <AppointmentCard
-          id="1"
-          time="13:05"
-          image="../../profile2.png"
-          name="Pasindu Nethmina"
-          faculty="Faculty of Agriculture"
-          note="Magna sit ullamco ipsum eu quis labore non sint. Labore culpa tempor
-          excepteur ut sunt aliqua eu cillum."
-        />
-      </Grid>
-      <Grid item xs={12} sm={6} md={3}>
-        <AppointmentCard
-          id="2"
-          time="12:35"
-          image="../../profile3.png"
-          name="Kasun Buddhika"
-          faculty="Faculty of Art"
-          note="Magna sit ullamco ipsum eu quis labore non sint. Labore culpa tempor
-          excepteur ut sunt aliqua eu cillum."
-        />
-      </Grid>
-      <Grid item xs={12} sm={6} md={3}>
-        <AppointmentCard
-          id="3"
-          time="12:45"
-          image="../../profile4.png"
-          name="Imashi Perera"
-          faculty="Faculty of Science"
-          note="Magna sit ullamco ipsum eu quis labore non sint. Labore culpa tempor
-          excepteur ut sunt aliqua eu cillum."
-          checkPatient={(id) => {
-            console.log(`Check patient clicked, Id: ${id}`);
-          }}
-        />
-      </Grid>
-
       <Grid item xs={12} md={8}>
         <Card>
           <CardHeader title="Patients" subheader="(+42%) than last year" />
@@ -182,7 +126,7 @@ export default function Home() {
         </Card>
       </Grid>
       <Grid item xs={12} md={4}>
-        <Card>
+        <Card sx={{ height: "100%" }}>
           <CardContent
             sx={{
               overflowX: "auto",

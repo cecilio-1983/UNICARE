@@ -168,7 +168,9 @@ export default function Emergency() {
                     key={`message${index}`}
                     message={msg}
                     user="student"
-                    image={student.image}
+                    image={
+                      msg.from === "student" ? student.image : doctor.image
+                    }
                   />
                 );
               } else {
@@ -177,7 +179,9 @@ export default function Emergency() {
                     key={`message${index}`}
                     message={msg}
                     user="student"
-                    image={student.image}
+                    image={
+                      msg.from === "student" ? student.image : doctor.image
+                    }
                     last
                   />
                 );
@@ -188,7 +192,7 @@ export default function Emergency() {
                   key={`message${index}`}
                   message={msg}
                   user="student"
-                  image={student.image}
+                  image={msg.from === "student" ? student.image : doctor.image}
                   last
                 />
               );

@@ -11,11 +11,7 @@ import NumbersIcon from "@mui/icons-material/Numbers";
 import HowToRegIcon from "@mui/icons-material/HowToReg";
 import BarChartIcon from "@mui/icons-material/BarChart";
 
-export default function StudentCard({
-  data,
-  marginBottom,
-  onClick = (studentId) => {},
-}) {
+export default function StudentCard({ data, onClick = (studentId) => {} }) {
   return (
     <Box
       sx={{
@@ -23,7 +19,7 @@ export default function StudentCard({
         width: "100%",
         pl: 1,
         pr: 1,
-        ...(marginBottom && { pb: 1 }),
+        pb: 1,
       }}
     >
       <Button

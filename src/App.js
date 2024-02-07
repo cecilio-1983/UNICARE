@@ -10,6 +10,7 @@ import { firebaseConfig } from "./config/Config";
 import { initializeApp } from "firebase/app";
 import { getMessaging, onMessage, getToken } from "firebase/messaging";
 import { put } from "./network/Request";
+import Landing from "./pages/Landing";
 
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
@@ -53,6 +54,7 @@ export default function App() {
     <ThemeProvider>
       <BrowserRouter>
         <Routes path={"/"}>
+          <Route path="/" element={<Landing />} />
           <Route path="/medical-centre/login" element={<DoctorLogin />} />
           <Route path="/medical-centre/home" element={<MNavigationDrawer />} />
           <Route path="/students/signup" element={<Signup />} />

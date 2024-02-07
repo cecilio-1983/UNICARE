@@ -1,0 +1,160 @@
+.container {
+  scrollbar-width: thin;
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow-x: auto;
+  font-family: "Roboto";
+}
+
+.container ::-webkit-scrollbar {
+  width: 5px;
+}
+
+.container ::-webkit-scrollbar-thumb {
+  background-color: rgba(128, 128, 128, 0.5);
+  transition: background-color 0.3 ease;
+}
+
+.container:hover ::-webkit-scrollbar-thumb {
+  background-color: red;
+}
+
+.header {
+  position: fixed;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 10px 20px;
+  background-color: black;
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
+}
+
+.brand-navigation-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  column-gap: 50px;
+}
+
+.header .brand-container {
+  display: flex;
+  flex-direction: row;
+  column-gap: 10px;
+}
+
+.header .logo {
+  height: 40px;
+}
+
+.header .name-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: space-between;
+}
+
+.header .name {
+  color: white;
+  font-family: "Cabin";
+  font-size: 18px;
+  letter-spacing: 9px;
+  font-weight: 600;
+}
+
+.header .slogan {
+  color: gray;
+  font-family: "Cabin";
+  font-size: 12px;
+  letter-spacing: 3.2px;
+  font-weight: 400;
+}
+
+.header ul {
+  display: flex;
+  flex-direction: row;
+  column-gap: 30px;
+  color: white;
+  list-style: none;
+}
+
+.header ul li {
+  position: relative;
+  cursor: pointer;
+}
+
+.header ul li a {
+  list-style: none;
+  text-decoration: none;
+  color: white;
+}
+
+.header ul li:hover {
+  .link-line {
+    width: 100%;
+  }
+}
+
+.link-line {
+  position: absolute;
+  left: 0;
+  height: 2px;
+  bottom: -5px;
+  border-radius: 1px;
+  width: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.27356880252100846) 0%,
+    rgba(255, 255, 255, 1) 100%
+  );
+  transition: width 0.5s linear;
+  -moz-transition: width 0.5s linear;
+  -webkit-transition: width 0.5s linear;
+  -o-transition: width 0.5s linear;
+  -ms-transition: width 0.5s linear;
+}
+
+.login {
+  display: flex;
+  align-items: center;
+  height: 30px;
+  font-size: 12px;
+  padding: 5px 10px;
+  background-color: #ffffff30;
+  border-radius: 15px;
+  list-style: none;
+  color: white;
+  text-decoration: none;
+}
+
+.mobile-menu-button {
+  display: none !important;
+  color: white !important;
+}
+
+.home {
+  width: 100%;
+  height: 100vh;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.about-us {
+  height: 100vh;
+  width: 100%;
+}
+
+@media only screen and (max-width: 600px) {
+  .header ul {
+    display: none;
+  }
+  .mobile-menu-button {
+    display: flex !important;
+  }
+}

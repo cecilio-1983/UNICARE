@@ -11,7 +11,12 @@ import dayjs from "dayjs";
 import isToday from "dayjs/plugin/isToday";
 dayjs.extend(isToday);
 
-export default function AppointmentCard({ data, shadow = true, sx }) {
+export default function AppointmentCard({
+  data,
+  shadow = true,
+  sx,
+  onClickCheck = (appointmentId) => {},
+}) {
   const isToday = dayjs(data.startTime).isToday();
 
   return (
@@ -26,10 +31,11 @@ export default function AppointmentCard({ data, shadow = true, sx }) {
     >
       <CardContent>
         <Typography variant="subtitle2">
-          {isToday
-            ? "Today "
-            : dayjs(data.endTime).format("YYYY-MM-DD hh:mm A - ")}
-          {dayjs(data.endTime).format("hh:mm A")}
+          {`${
+            isToday
+              ? "Today"
+              : dayjs(data.startTime).format("YYYY-MM-DD hh:mm A")
+          } - ${dayjs(data.endTime).format("hh:mm A")}`}
         </Typography>
         <Box
           display="flex"
@@ -86,7 +92,7 @@ export default function AppointmentCard({ data, shadow = true, sx }) {
             variant="outlined"
             size="small"
             startIcon={<NoteAltIcon />}
-            onClick={() => {}}
+            onClick={() => onClickCheck(data._id)}
           >
             Check Patient
           </Button>

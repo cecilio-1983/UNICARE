@@ -227,6 +227,7 @@ export default function Emergency() {
               display: "block",
               overflowY: "auto",
               scrollbarWidth: "thin",
+              gap: 1,
               "&::-webkit-scrollbar": {
                 width: "5px",
                 display: "none",
@@ -240,24 +241,13 @@ export default function Emergency() {
               },
             }}
           >
-            {msgOverviews.map((value, index) => {
-              if (index === msgOverviews.length - 1) {
-                return (
-                  <MessageCard
-                    key={index}
-                    data={value}
-                    onClick={msgOverviewClicked}
-                  />
-                );
-              } else {
-                return (
-                  <span key={index}>
-                    <MessageCard data={value} onClick={msgOverviewClicked} />
-                    <Divider />
-                  </span>
-                );
-              }
-            })}
+            {msgOverviews.map((value, index) => (
+              <MessageCard
+                key={index}
+                data={value}
+                onClick={msgOverviewClicked}
+              />
+            ))}
           </Box>
         </Box>
       </Card>
@@ -277,7 +267,10 @@ export default function Emergency() {
         }}
       >
         <Box display="flex" alignItems="center" padding={1}>
-          <Avatar src={selectedStudent.image} />
+          <Avatar
+            src={selectedStudent.image}
+            sx={{ bgcolor: "rgba(0, 0, 0, 0.3)" }}
+          />
           <Box display="flex" flexDirection="column" ml={1}>
             <Typography variant="subtitle2">{selectedStudent.name}</Typography>
             <Typography fontSize="10px" color="text.disabled">

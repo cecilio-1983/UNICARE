@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
 import {
   Box,
@@ -20,26 +20,21 @@ import "@fontsource/cabin/400.css";
 import "@fontsource/cabin/600.css";
 
 import AppointmentCard from "../../components/AppointmentCard";
+import { useDoctor } from "./DoctorContext";
+import { fetch, put } from "../../network/Request";
+import CheckPatient from "./CheckPatient";
+import Appointments from "./Appointments";
 
-const series = [
-  {
-    name: "Faculty of Science",
-    data: [31, 40, 28, 51, 42, 109, 100],
-  },
-  {
-    name: "Faculty of Technology",
-    data: [11, 32, 45, 32, 34, 52, 41],
-  },
-  {
-    name: "Faculty of Commerce",
-    data: [5, 50, 21, 17, 47, 20, 10],
-  },
-];
-
-export default function Home() {
+export default function Home({ openCheckPatient = (appointmentId) => {} }) {
   const theme = useTheme();
+  const { doctor, noAuth, showAlert, openOtherTab } = useDoctor();
 
-  const options = {
+  const [online, setOnline] = useState(false);
+  const [selectedDate] = useState(dayjs().format("DD/MM/YYYY"));
+  const [now, setNow] = useState(dayjs().format("HH:mm:ss A"));
+  const [appointments, setAppointments] = useState([]);
+  const [series, setSeries] = useState([]);
+  const [options, setOptions] = useState({
     chart: {
       height: 350,
       type: "area",
@@ -79,17 +74,76 @@ export default function Home() {
     theme: {
       mode: theme.palette.mode,
     },
+  });
+
+  const changeOnlineStatus = () => {
+    put(
+      "tabs/doctors/home/status",
+      {},
+      (response) => {
+        setOnline(response.online);
+        showAlert(response.status, response.message);
+      },
+      (error) => {
+        if (error.status === "no-auth") noAuth();
+        else showAlert(error.status, error.message);
+      }
+    );
   };
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setNow(dayjs().format("HH:mm:ss A"));
+    }, 1000);
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
+
+  useEffect(() => {
+    fetch(
+      "tabs/doctors/home",
+      {},
+      (response) => {
+        setOnline(response.online);
+        setAppointments(response.appointments);
+        let sd = [];
+        let xaxis = {
+          type: "year",
+          categories: [],
+        };
+        response.graph.forEach((e) => {
+          let dt = {
+            name: e.faculty,
+            data: [],
+          };
+          e.years.forEach((f) => {
+            xaxis.categories = [...xaxis.categories, f.year];
+            dt.data = [...dt.data, f.count];
+          });
+          sd.push(dt);
+        });
+        setOptions((prev) => ({ ...prev, xaxis: xaxis }));
+        setSeries(sd);
+      },
+      (error) => {
+        if (error.status === "no-auth") noAuth();
+        else showAlert(error.status, error.message);
+      }
+    );
+  }, [noAuth, showAlert]);
 
   return (
     <Grid container spacing={2}>
       <Grid item xs={12} md={9}>
         <Card>
           <CardContent>
-            <Typography variant="h6">Hi Nayanajith, Good Morning</Typography>
+            <Typography variant="h6">
+              Hi {doctor.firstName}, Good Morning
+            </Typography>
             <Box display="flex" justifyContent="space-between">
-              <Typography>08:12:45 AM</Typography>
-              <Typography>21/12/2023</Typography>
+              <Typography>{now}</Typography>
+              <Typography>{selectedDate}</Typography>
             </Box>
           </CardContent>
         </Card>
@@ -111,10 +165,14 @@ export default function Home() {
               alignItems: "center",
             }}
           >
-            <Typography fontWeight="600" fontSize="18px" color="green">
-              ONLINE
+            <Typography
+              fontWeight="600"
+              fontSize="18px"
+              color={online ? "green" : "red"}
+            >
+              {online ? "ONLINE" : "OFFLINE"}
             </Typography>
-            <Switch defaultChecked />
+            <Switch checked={online} onChange={changeOnlineStatus} />
           </CardContent>
         </Card>
       </Grid>
@@ -122,60 +180,33 @@ export default function Home() {
       <Grid item xs={12}>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography>Upcomming Appointments</Typography>
-          <Button variant="outlined">View all</Button>
+          <Button
+            variant="outlined"
+            onClick={() => openOtherTab(1, <Appointments />)}
+          >
+            View all
+          </Button>
         </Box>
       </Grid>
-
-      {/* <Grid item xs={12} sm={6} md={3}>
-        <AppointmentCard
-          id="0"
-          time="12:05"
-          image="../../profile1.png"
-          name="Ahinsa Lakshani"
-          faculty="Faculty of Science"
-          note="Magna sit ullamco ipsum eu quis labore non sint. Labore culpa tempor
-          excepteur ut sunt aliqua eu cillum."
-        />
-      </Grid>
-      <Grid item xs={12} sm={6} md={3}>
-        <AppointmentCard
-          id="1"
-          time="13:05"
-          image="../../profile2.png"
-          name="Pasindu Nethmina"
-          faculty="Faculty of Agriculture"
-          note="Magna sit ullamco ipsum eu quis labore non sint. Labore culpa tempor
-          excepteur ut sunt aliqua eu cillum."
-        />
-      </Grid>
-      <Grid item xs={12} sm={6} md={3}>
-        <AppointmentCard
-          id="2"
-          time="12:35"
-          image="../../profile3.png"
-          name="Kasun Buddhika"
-          faculty="Faculty of Art"
-          note="Magna sit ullamco ipsum eu quis labore non sint. Labore culpa tempor
-          excepteur ut sunt aliqua eu cillum."
-        />
-      </Grid>
-      <Grid item xs={12} sm={6} md={3}>
-        <AppointmentCard
-          id="3"
-          time="12:45"
-          image="../../profile4.png"
-          name="Imashi Perera"
-          faculty="Faculty of Science"
-          note="Magna sit ullamco ipsum eu quis labore non sint. Labore culpa tempor
-          excepteur ut sunt aliqua eu cillum."
-          checkPatient={(id) => {
-            console.log(`Check patient clicked, Id: ${id}`);
-          }}
-        />
-      </Grid> */}
-
+      {appointments.length > 0 && (
+        <Grid item xs={12}>
+          <Grid container spacing={2}>
+            {appointments.map((appointment, index) => (
+              <Grid key={index} item xs={12} sm={6} md={3}>
+                <AppointmentCard
+                  data={appointment}
+                  shadow
+                  onClickCheck={(apId) =>
+                    openOtherTab(2, <CheckPatient appointmentId={apId} />)
+                  }
+                />
+              </Grid>
+            ))}
+          </Grid>
+        </Grid>
+      )}
       <Grid item xs={12} md={8}>
-        <Card>
+        <Card sx={{ height: "100%" }}>
           <CardHeader title="Patients" subheader="(+42%) than last year" />
           <CardContent>
             <ReactApexCharts
@@ -188,7 +219,7 @@ export default function Home() {
         </Card>
       </Grid>
       <Grid item xs={12} md={4}>
-        <Card>
+        <Card sx={{ height: "100%" }}>
           <CardContent
             sx={{
               overflowX: "auto",
@@ -206,7 +237,7 @@ export default function Home() {
             }}
           >
             <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <DateCalendar defaultValue={dayjs(new Date())} />
+              <DateCalendar />
             </LocalizationProvider>
           </CardContent>
         </Card>

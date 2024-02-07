@@ -1,5 +1,6 @@
-import React, { Fragment, useEffect, useState } from "react";
+import React, { Fragment, useCallback, useEffect, useState } from "react";
 import {
+  AppBar,
   Grid,
   Card,
   CardContent,
@@ -22,6 +23,7 @@ import {
   DialogContentText,
   Tooltip,
   IconButton,
+  Toolbar,
   useMediaQuery,
   useTheme,
 } from "@mui/material";
@@ -40,6 +42,7 @@ import WcIcon from "@mui/icons-material/Wc";
 import AccessAlarmIcon from "@mui/icons-material/AccessAlarm";
 import FolderSharedIcon from "@mui/icons-material/FolderShared";
 import AddCircleOutlineIcon from "@mui/icons-material/AddCircleOutline";
+import CloseIcon from "@mui/icons-material/Close";
 
 import { useDoctor } from "./DoctorContext";
 import { fetch, put } from "../../network/Request";
@@ -47,10 +50,12 @@ import dayjs from "dayjs";
 
 import Students from "../../assets/images/Students.svg";
 import EmptyList from "../../assets/images/EmptyList.svg";
-import OnGoingAppointmentCard from "../../components/OnGoingAppointmentCard";
+import CheckAppointmentCard from "../../components/CheckAppointmentCard";
+import RecordCard from "../../components/RecordCard";
 
 import Autocomplete, { createFilterOptions } from "@mui/material/Autocomplete";
 import validate from "../../validation/Validator";
+import update from "immutability-helper";
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -73,8 +78,11 @@ const healthRecordValidations = {
 };
 
 export default function CheckPatient({ appointmentId = null }) {
+  const { doctor } = useDoctor();
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down("xs"));
+  const downSm = useMediaQuery(theme.breakpoints.down("sm"));
+  const downMd = useMediaQuery(theme.breakpoints.down("md"));
 
   const { noAuth, showAlert } = useDoctor();
   const [students, setStudents] = useState([]);
@@ -120,6 +128,23 @@ export default function CheckPatient({ appointmentId = null }) {
     description: "",
   }); // final health record values
 
+  const [healthRecordsOpen, setHealthRecordsOpen] = useState(false);
+  const [healthRecords, setHealthRecords] = useState([]);
+
+  const loadData = useCallback(() => {
+    fetch(
+      "tabs/doctors/check-patient",
+      {},
+      (response) => {
+        setStudents(response.students);
+      },
+      (error) => {
+        if (error.status === "no-auth") noAuth();
+        else showAlert(error.status, error.message);
+      }
+    );
+  }, [noAuth, showAlert]);
+
   const onStudentClick = (studentId) => {
     fetch(
       "tabs/doctors/check-patient/student",
@@ -136,6 +161,8 @@ export default function CheckPatient({ appointmentId = null }) {
             endTime: ap.endTime,
             description: ap.description,
             checked: ap.checked,
+            checkedAt: ap.checkedAt,
+            createdAt: ap.createdAt,
             image: response.student.image,
             firstName: response.student.firstName,
             lastName: response.student.lastName,
@@ -149,6 +176,8 @@ export default function CheckPatient({ appointmentId = null }) {
             endTime: ap.endTime,
             description: ap.description,
             checked: ap.checked,
+            checkedAt: ap.checkedAt,
+            createdAt: ap.createdAt,
             image: response.student.image,
             firstName: response.student.firstName,
             lastName: response.student.lastName,
@@ -162,6 +191,8 @@ export default function CheckPatient({ appointmentId = null }) {
             endTime: ap.endTime,
             description: ap.description,
             checked: ap.checked,
+            checkedAt: ap.checkedAt,
+            createdAt: ap.createdAt,
             image: response.student.image,
             firstName: response.student.firstName,
             lastName: response.student.lastName,
@@ -290,6 +321,47 @@ export default function CheckPatient({ appointmentId = null }) {
           }),
         },
         (response) => {
+          if (selectedAppointment !== null) {
+            const onIndex = ongoingAppointments.findIndex(
+              (x) => x._id === selectedAppointment._id
+            );
+            const upIndex = upcomingAppointments.findIndex(
+              (x) => x._id === selectedAppointment._id
+            );
+            const prIndex = previousAppointments.findIndex(
+              (x) => x._id === selectedAppointment._id
+            );
+
+            if (onIndex !== -1) {
+              const updatedAp = update(ongoingAppointments[onIndex], {
+                checked: { $set: true },
+                checkedAt: { $set: new Date() },
+              });
+              const newAps = update(ongoingAppointments, {
+                $splice: [[onIndex, 1, updatedAp]],
+              });
+              setOngoingAppointments(newAps);
+            } else if (upIndex !== -1) {
+              const updatedAp = update(upcomingAppointments[upIndex], {
+                checked: { $set: true },
+                checkedAt: { $set: new Date() },
+              });
+              const newAps = update(upcomingAppointments, {
+                $splice: [[upIndex, 1, updatedAp]],
+              });
+              setUpcomingAppointments(newAps);
+            } else if (prIndex !== -1) {
+              const updatedAp = update(previousAppointments[prIndex], {
+                checked: { $set: true },
+                checkedAt: { $set: new Date() },
+              });
+              const newAps = update(previousAppointments, {
+                $splice: [[prIndex, 1, updatedAp]],
+              });
+              setPreviousAppointments(newAps);
+            }
+          }
+          handleAddHealthRecordClose();
           showAlert(response.status, response.message);
         },
         (error) => {
@@ -298,6 +370,50 @@ export default function CheckPatient({ appointmentId = null }) {
         }
       );
     }
+  };
+
+  const onSearch = (e) => {
+    const { value } = e.target;
+
+    if (!value) {
+      loadData();
+      return;
+    }
+
+    fetch(
+      "tabs/doctors/check-patient/search",
+      { keyWord: value },
+      (response) => {
+        setStudents(response.students);
+      },
+      (error) => {
+        if (error.status === "no-auth") noAuth();
+        else showAlert(error.status, error.message);
+      }
+    );
+  };
+
+  const handleHealthRecordsOpen = () => {
+    if (!selectedStudent._id) return;
+
+    fetch(
+      "tabs/doctors/check-patient/records",
+      { studentId: selectedStudent._id },
+      (response) => {
+        setHealthRecords(response.records);
+      },
+      (error) => {
+        if (error.status === "no-auth") noAuth();
+        else showAlert(error.status, error.message);
+      }
+    );
+
+    setHealthRecordsOpen(true);
+  };
+
+  const handleHealthRecordsClose = () => {
+    setHealthRecords([]);
+    setHealthRecordsOpen(false);
   };
 
   useEffect(() => {
@@ -359,18 +475,8 @@ export default function CheckPatient({ appointmentId = null }) {
   }, [appointmentId, noAuth, showAlert]);
 
   useEffect(() => {
-    fetch(
-      "tabs/doctors/check-patient",
-      {},
-      (response) => {
-        setStudents(response.students);
-      },
-      (error) => {
-        if (error.status === "no-auth") noAuth();
-        else showAlert(error.status, error.message);
-      }
-    );
-  }, [noAuth, showAlert]);
+    loadData();
+  }, [loadData]);
 
   useEffect(() => {
     fetch("diseases/all", {}, (response) => {
@@ -444,16 +550,12 @@ export default function CheckPatient({ appointmentId = null }) {
                 >
                   <Typography>Appointment </Typography>
                   <Box
-                    display="flex"
-                    justifyContent="start"
-                    alignItems="start"
+                    display="grid"
+                    gridTemplateColumns="min-content auto"
+                    gap={1}
                     mt={2}
                   >
-                    <Typography
-                      variant="caption"
-                      color="text.disabled"
-                      flex={1}
-                    >
+                    <Typography variant="caption" color="text.disabled">
                       Start time
                     </Typography>
                     <Typography variant="caption" ml={1}>
@@ -461,13 +563,7 @@ export default function CheckPatient({ appointmentId = null }) {
                         "YYYY-MM-DD hh:mm A"
                       )}
                     </Typography>
-                  </Box>
-                  <Box display="flex" justifyContent="start" alignItems="start">
-                    <Typography
-                      variant="caption"
-                      color="text.disabled"
-                      flex={1}
-                    >
+                    <Typography variant="caption" color="text.disabled">
                       End time
                     </Typography>
                     <Typography variant="caption" ml={1}>
@@ -475,25 +571,13 @@ export default function CheckPatient({ appointmentId = null }) {
                         "YYYY-MM-DD hh:mm A"
                       )}
                     </Typography>
-                  </Box>
-                  <Box display="flex" justifyContent="start" alignItems="start">
-                    <Typography
-                      variant="caption"
-                      color="text.disabled"
-                      flex={1}
-                    >
+                    <Typography variant="caption" color="text.disabled">
                       Description
                     </Typography>
                     <Typography variant="caption" textAlign="justify" ml={1}>
                       {selectedAppointment.description}
                     </Typography>
-                  </Box>
-                  <Box display="flex" justifyContent="start" alignItems="start">
-                    <Typography
-                      variant="caption"
-                      color="text.disabled"
-                      flex={1}
-                    >
+                    <Typography variant="caption" color="text.disabled">
                       Created at
                     </Typography>
                     <Typography variant="caption" ml={1}>
@@ -584,6 +668,42 @@ export default function CheckPatient({ appointmentId = null }) {
         </DialogActions>
       </Dialog>
 
+      <Dialog
+        fullScreen
+        open={healthRecordsOpen}
+        onClose={handleHealthRecordsClose}
+        TransitionComponent={Transition}
+      >
+        <AppBar sx={{ position: "relative" }}>
+          <Toolbar>
+            <IconButton
+              edge="start"
+              color="inherit"
+              onClick={handleHealthRecordsClose}
+              aria-label="close"
+            >
+              <CloseIcon />
+            </IconButton>
+            <Typography sx={{ ml: 2, flex: 1 }} variant="h6" component="div">
+              Health Records
+            </Typography>
+          </Toolbar>
+        </AppBar>
+        <Box
+          overflowY="auto"
+          display="inline-grid"
+          gap="16px 16px"
+          gridTemplateColumns={
+            downSm ? "1fr" : downMd ? "1fr 1fr" : "1fr 1fr 1fr"
+          }
+          m={3}
+        >
+          {healthRecords.map((record, index) => (
+            <RecordCard dp={doctor.image} data={record} />
+          ))}
+        </Box>
+      </Dialog>
+
       <Box display="flex" flexDirection="column" rowGap={2}>
         <Card
           className="check-patient-student-list"
@@ -611,6 +731,7 @@ export default function CheckPatient({ appointmentId = null }) {
                   </InputAdornment>
                 ),
               }}
+              onChange={onSearch}
             />
             <Box
               sx={{
@@ -634,7 +755,6 @@ export default function CheckPatient({ appointmentId = null }) {
                 <StudentCard
                   key={index}
                   data={student}
-                  marginBottom
                   onClick={onStudentClick}
                 />
               ))}
@@ -687,7 +807,7 @@ export default function CheckPatient({ appointmentId = null }) {
                     </IconButton>
                   </Tooltip>
                   <Tooltip title="View Health Records">
-                    <IconButton>
+                    <IconButton onClick={handleHealthRecordsOpen}>
                       <FolderSharedIcon />
                     </IconButton>
                   </Tooltip>
@@ -811,7 +931,7 @@ export default function CheckPatient({ appointmentId = null }) {
                       }}
                     >
                       {ongoingAppointments.map((ap, index) => (
-                        <OnGoingAppointmentCard
+                        <CheckAppointmentCard
                           key={index}
                           data={ap}
                           checkNow={checkNow}
@@ -850,7 +970,7 @@ export default function CheckPatient({ appointmentId = null }) {
                       }}
                     >
                       {upcomingAppointments.map((ap, index) => (
-                        <OnGoingAppointmentCard
+                        <CheckAppointmentCard
                           key={index}
                           data={ap}
                           checkNow={checkNow}
@@ -891,9 +1011,10 @@ export default function CheckPatient({ appointmentId = null }) {
                       }}
                     >
                       {previousAppointments.map((ap, index) => (
-                        <OnGoingAppointmentCard
+                        <CheckAppointmentCard
                           key={index}
                           data={ap}
+                          checkNow={checkNow}
                           marginRight={
                             index !== upcomingAppointments.length - 1
                           }

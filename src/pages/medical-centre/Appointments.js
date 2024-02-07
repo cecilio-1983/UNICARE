@@ -11,11 +11,10 @@ import "../../assets/css/Main.css";
 import PersonIcon from "@mui/icons-material/Person";
 import OpenInBrowserIcon from "@mui/icons-material/OpenInBrowser";
 import DescriptionIcon from "@mui/icons-material/Description";
+import CheckPatient from "./CheckPatient";
 
-export default function Appointments({
-  openCheckPatient = (appointmentId) => {},
-}) {
-  const { showAlert, noAuth } = useDoctor();
+export default function Appointments() {
+  const { showAlert, noAuth, openOtherTab } = useDoctor();
   const [events, setEvents] = useState([]);
 
   const getRemoteEvents = (data) => {
@@ -54,7 +53,7 @@ export default function Appointments({
   };
 
   const browseCheckPatient = (appointmentId) => {
-    openCheckPatient(appointmentId);
+    openOtherTab(2, <CheckPatient appointmentId={appointmentId} />);
   };
 
   return (
